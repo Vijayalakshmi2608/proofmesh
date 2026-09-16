@@ -5,6 +5,9 @@ import { dashboardMetrics } from "./services/dashboardService";
 import { getProof, listProofs } from "./services/proofService";
 import { createSubmission, reviewSubmission } from "./services/submissionService";
 import { createTask, getTask, listTasks, updateTask } from "./services/taskService";
+import { generateRecipe, validateRecipe } from "./services/recipeService";
+import { runDeterministicChecks } from "./services/verificationService";
+import { releasePayout, submitEvidence } from "./services/workflowService";
 
 const requestFor = (role: string) => ({ header: () => role }) as never;
 const user = (role: string) => getDemoUser(requestFor(role));
@@ -39,5 +42,18 @@ describe("ProofMesh Demo Mode API services", () => {
   });
   it("calculates dashboard metrics from SQLite records", async () => {
     await expect(dashboardMetrics(user("sponsor"))).resolves.toMatchObject({ activeTasks: expect.any(Number), pendingReviews: expect.any(Number), totalEscrowed: expect.any(Number), verifiedWork: expect.any(Number) });
+  });
+  it("rejects ambiguous recipes and generates a safe draft without approval authority", async () => {
+    const result = validateRecipe({ deliverables: ["ship it"], acceptanceCriteria: [{ label: "Be fast", description: "Make it good soon", measurable: false }], requiredEvidence: [{ type: "document", label: "Explanation", required: true }], automatedChecks: [], humanChecks: [{ label: "Review", instruction: "Reviewer checks the outcome." }], disputeWindowHours: 72, failureBehavior: "request_changes", policyVersion: "1.0" });
+    expect(result.valid).toBe(false);
+    await expect(generateRecipe("Define a measurable task for a Solana indexer with pull request evidence and a human reviewer.")).resolves.toMatchObject({ modelName: expect.any(String), validation: expect.any(Object) });
+  });
+  it("runs deterministic checks and records a server-side verification result", async () => {
+    await expect(runDeterministicChecks(user("reviewer"), "sub-001")).resolves.toMatchObject({ submissionId: "sub-001", checks: expect.any(Array), recipeHash: expect.any(String) });
+  });
+  it("prevents expired submissions and mismatched policy-hash payouts", async () => {
+    await expect(submitEvidence(user("contributor"), "task-003", { pullRequestUrl: "https://github.com/drift-monitor/api/pull/118", explanation: "This late submission should be rejected because the contract deadline has passed and the seeded task is expired.", idempotencyKey: "expired-test-key", evidence: [{ type: "pull_request", title: "PR", detail: "Late PR", href: "https://github.com/drift-monitor/api/pull/118" }] })).rejects.toMatchObject({ status: 409 });
+    await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "7pT9K3xLsimulatedwallet", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "b".repeat(64) })).rejects.toMatchObject({ status: 409 });
+    await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "7pT9K3xLsimulatedwallet", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "c".repeat(64) })).rejects.toMatchObject({ status: 409 });
   });
 });

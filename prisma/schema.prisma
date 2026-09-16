@@ -24,53 +24,56 @@ model Profile {
 }
 
 model Organization {
-  id                String               @id @default(uuid())
-  name              String
-  slug              String               @unique
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  members           OrganizationMember[]
-  tasks             Task[]
-  activityEvents    ActivityEvent[]
+  id             String               @id @default(uuid())
+  name           String
+  slug           String               @unique
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  members        OrganizationMember[]
+  tasks          Task[]
+  activityEvents ActivityEvent[]
 }
 
 model OrganizationMember {
-  id                String       @id @default(uuid())
-  organizationId    String
-  profileId         String
-  role              String
-  createdAt         DateTime     @default(now())
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  profile          Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  organizationId String
+  profileId      String
+  role           String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
   @@unique([organizationId, profileId])
 }
 
 model Task {
-  id                  String                   @id @default(uuid())
-  organizationId      String
-  sponsorId           String
-  title               String
-  summary             String
-  project             String
-  chain               String                   @default("Solana")
-  status              String                   @default("draft")
-  paymentAmount       Int
-  currency            String                   @default("USDC")
-  tokenMint           String?
-  deadline            DateTime?
-  disputeWindow       Int                      @default(72)
-  maxSubmissions      Int                      @default(2)
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
-  organization        Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  sponsor             Profile                  @relation("TaskSponsor", fields: [sponsorId], references: [id])
-  requirements        TaskRequirement[]
-  recipes             TaskVerificationRecipe[]
-  versions            TaskVersion[]
-  submissions         Submission[]
-  escrow              Escrow?
-  proofReceipts       ProofReceipt[]
-  activityEvents      ActivityEvent[]
+  id               String                   @id @default(uuid())
+  organizationId   String
+  sponsorId        String
+  title            String
+  summary          String
+  project          String
+  repositoryUrl    String?
+  category         String                   @default("protocol")
+  chain            String                   @default("Solana")
+  status           String                   @default("draft")
+  paymentAmount    Int
+  currency         String                   @default("USDC")
+  tokenMint        String?
+  deadline         DateTime?
+  disputeWindow    Int                      @default(72)
+  maxSubmissions   Int                      @default(2)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  organization     Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sponsor          Profile                  @relation("TaskSponsor", fields: [sponsorId], references: [id])
+  requirements     TaskRequirement[]
+  recipes          TaskVerificationRecipe[]
+  versions         TaskVersion[]
+  submissions      Submission[]
+  escrow           Escrow?
+  proofReceipts    ProofReceipt[]
+  outcomeContract  OutcomeContract?
+  activityEvents   ActivityEvent[]
   @@index([organizationId, status])
 }
 
@@ -94,6 +97,30 @@ model TaskVerificationRecipe {
   task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
 
+model OutcomeContract {
+  id                 String   @id @default(uuid())
+  taskId             String   @unique
+  version            Int      @default(1)
+  deliverablesJson   String
+  acceptanceJson     String
+  evidenceJson       String
+  automatedChecksJson String
+  humanChecksJson    String
+  failureBehavior    String
+  reviewerProfileId  String?
+  policyVersion      String
+  canonicalJson      String
+  recipeHash         String
+  originalPrompt     String?
+  generatedDraftJson String?
+  modelName          String?
+  generatedAt        DateTime?
+  approvedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  task               Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
 model TaskVersion {
   id          String   @id @default(uuid())
   taskId      String
@@ -111,6 +138,10 @@ model Submission {
   contributorId  String
   status         String           @default("draft")
   note           String
+  pullRequestUrl String?
+  deploymentUrl  String?
+  explanation    String?
+  idempotencyKey String?          @unique
   submittedAt    DateTime?
   reviewedAt     DateTime?
   contentHash    String?
@@ -146,6 +177,9 @@ model VerificationRun {
   label        String
   value        String
   recipeHash   String?
+  checkType    String     @default("automated")
+  details      String?
+  checkedAt    DateTime?
   createdAt    DateTime   @default(now())
   submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }
@@ -176,22 +210,29 @@ model Escrow {
 }
 
 model ProofReceipt {
-  id               String     @id @default(uuid())
-  taskId           String
-  submissionId     String     @unique
-  contributorId    String
-  status           String     @default("active")
-  publicVisibility Boolean    @default(true)
-  rewardAmount     Int
-  verificationHash String
-  transactionHash  String?
-  contentHash      String?
-  recipeHash       String?
-  issuedAt         DateTime   @default(now())
-  revokedAt        DateTime?
-  expiresAt        DateTime?
-  task             Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  submission       Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  id                  String     @id @default(uuid())
+  taskId              String
+  submissionId        String     @unique
+  contributorId       String
+  status              String     @default("active")
+  publicVisibility    Boolean    @default(true)
+  rewardAmount        Int
+  verificationHash    String
+  transactionHash     String?
+  contentHash         String?
+  recipeHash          String?
+  contributorWallet   String?
+  sponsorOrganization String?
+  outcomeContractHash String?
+  evidenceHash        String?
+  recipeVersion       Int?
+  reviewerWallet      String?
+  payoutSignature     String?
+  issuedAt            DateTime   @default(now())
+  revokedAt           DateTime?
+  expiresAt           DateTime?
+  task                Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  submission          Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }
 
 model ActivityEvent {
