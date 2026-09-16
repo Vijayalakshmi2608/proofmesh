@@ -5,6 +5,11 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 10
 
 async function main() {
   await prisma.activityEvent.deleteMany();
+  await prisma.financialAudit.deleteMany();
+  await prisma.agentRequest.deleteMany();
+  await prisma.agentPolicy.deleteMany();
+  await prisma.proofAccessEvent.deleteMany();
+  await prisma.proofRequirement.deleteMany();
   await prisma.proofReceipt.deleteMany();
   await prisma.escrow.deleteMany();
   await prisma.review.deleteMany();
@@ -88,6 +93,15 @@ async function main() {
   await prisma.proofReceipt.createMany({ data: [
     { taskId: task3.id, submissionId: submission2.id, contributorId: contributor.id, rewardAmount: 95000, verificationHash: "pm_7f4c…d902", transactionHash: "5wK2…rP91", payoutSignature: "5wK2…rP91", contentHash: "sha256:proof-webhooks", evidenceHash: "sha256:proof-webhooks", recipeHash: "c".repeat(64), recipeVersion: 1, outcomeContractHash: "c".repeat(64), contributorWallet: contributor.walletAddress, reviewerWallet: reviewer.walletAddress, sponsorOrganization: organization.slug },
   ] });
+  const proof = await prisma.proofReceipt.findUniqueOrThrow({ where: { submissionId: submission2.id } });
+  await prisma.proofRequirement.create({ data: { taskId: task2.id, title: "Verified Solana integration proof", description: "At least one active Proof-of-Work Receipt from a completed Solana reliability task is required to apply.", requiredCategory: "reliability", minActiveProofs: 1, ruleJson: JSON.stringify({ chain: "Solana", category: "reliability", status: "active", minActiveProofs: 1 }) } });
+  const agentPolicy = await prisma.agentPolicy.create({ data: { organizationId: organization.id, ownerId: sponsor.id, name: "Solana triage agent", maxBudget: 80000, allowedCategories: JSON.stringify(["reliability", "tooling"]), allowedRecipients: JSON.stringify([contributor.id]), approvalThreshold: 25000, enabled: true, simulated: true } });
+  await prisma.proofAccessEvent.create({ data: { proofReceiptId: proof.id, taskId: task2.id, contributorId: contributor.id, eventType: "eligibility_check" } });
+  await prisma.financialAudit.createMany({ data: [
+    { organizationId: organization.id, actorId: sponsor.id, action: "escrow_funded", entityType: "task", entityId: task1.id, amount: 240000, status: "confirmed", metadataJson: JSON.stringify({ network: "devnet", simulated: true }) },
+    { organizationId: organization.id, actorId: reviewer.id, action: "payout_released", entityType: "proof", entityId: proof.id, amount: 95000, status: "confirmed", metadataJson: JSON.stringify({ network: "devnet", transactionHash: "5wK2…rP91" }) },
+  ] });
+  await prisma.agentRequest.create({ data: { policyId: agentPolicy.id, taskId: task2.id, recipientId: contributor.id, requestedAmount: 18000, status: "pending", requiresHumanApproval: false } });
   await prisma.activityEvent.createMany({ data: [
     { organizationId: organization.id, actorId: contributor.id, taskId: task1.id, submissionId: submission1.id, kind: "review", title: "Maya Chen submitted evidence", detail: "Upgrade indexer to compressed account support", color: "violet", href: "/submissions/sub-001", createdAt: new Date("2026-09-16T08:42:00Z") },
     { organizationId: organization.id, actorId: reviewer.id, taskId: task3.id, submissionId: submission2.id, kind: "verified", title: "Automated checks passed", detail: "42 checks on Add webhook replay protection", color: "emerald", href: "/submissions/sub-002", createdAt: new Date("2026-09-16T07:00:00Z") },

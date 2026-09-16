@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   ArrowUpRight,
   BadgeCheck,
+  Bot,
   Bell,
   Blocks,
   Check,
@@ -52,6 +53,8 @@ export const navItems = [
   { label: "Tasks", href: "/tasks", icon: ListChecks },
   { label: "Submissions", href: "/submissions/sub-001", icon: Inbox },
   { label: "Proof receipts", href: "/proofs", icon: BadgeCheck },
+  { label: "Proof-to-Access", href: "/access", icon: ShieldCheck },
+  { label: "Agent demo", href: "/agents", icon: Bot },
 ];
 
 export function BrandMark({ compact = false }: { compact?: boolean }) {

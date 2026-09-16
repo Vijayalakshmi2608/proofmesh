@@ -12,6 +12,8 @@ import SubmissionDetail from "./pages/SubmissionDetail";
 import Proofs, { ProofDetail } from "./pages/Proofs";
 import Settings from "./pages/Settings";
 import VerifyProof from "./pages/VerifyProof";
+import ProofAccess from "./pages/ProofAccess";
+import AgentDemo from "./pages/AgentDemo";
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } });
 
@@ -29,6 +31,8 @@ export default function App() {
     <Route path="/proofs/:id" element={<Workspace><ProofDetail /></Workspace>} />
     <Route path="/settings" element={<Workspace><Settings /></Workspace>} />
     <Route path="/verify/:proofId" element={<VerifyProof />} />
+    <Route path="/access" element={<Workspace><ProofAccess /></Workspace>} />
+    <Route path="/agents" element={<Workspace><AgentDemo /></Workspace>} />
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Routes></BrowserRouter></DemoUserProvider></QueryClientProvider>;
 }

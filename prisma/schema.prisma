@@ -21,6 +21,11 @@ model Profile {
   submissions       Submission[]         @relation("ContributorSubmissions")
   reviews           Review[]             @relation("ReviewerReviews")
   activityEvents    ActivityEvent[]     @relation("ActorActivity")
+  proofAccessEvents ProofAccessEvent[]
+  agentPolicies     AgentPolicy[]       @relation("AgentPolicyOwner")
+  agentRequests     AgentRequest[]      @relation("AgentRequestRecipient")
+  approvedAgentRequests AgentRequest[]  @relation("AgentRequestApprover")
+  financialAuditEvents FinancialAudit[] @relation("AuditActor")
 }
 
 model Organization {
@@ -32,6 +37,8 @@ model Organization {
   members        OrganizationMember[]
   tasks          Task[]
   activityEvents ActivityEvent[]
+  agentPolicies  AgentPolicy[]
+  financialAuditEvents FinancialAudit[]
 }
 
 model OrganizationMember {
@@ -73,6 +80,9 @@ model Task {
   escrow           Escrow?
   proofReceipts    ProofReceipt[]
   outcomeContract  OutcomeContract?
+  proofRequirement ProofRequirement?
+  proofAccessEvents ProofAccessEvent[]
+  agentRequests    AgentRequest[]
   activityEvents   ActivityEvent[]
   @@index([organizationId, status])
 }
@@ -233,6 +243,87 @@ model ProofReceipt {
   expiresAt           DateTime?
   task                Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
   submission          Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  accessEvents         ProofAccessEvent[]
+}
+
+model ProofRequirement {
+  id              String   @id @default(uuid())
+  taskId           String   @unique
+  title            String
+  description      String
+  requiredCategory String
+  minActiveProofs  Int      @default(1)
+  ruleJson         String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  task             Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model ProofAccessEvent {
+  id             String       @id @default(uuid())
+  proofReceiptId String
+  taskId         String
+  contributorId  String
+  eventType      String
+  createdAt      DateTime     @default(now())
+  proofReceipt   ProofReceipt @relation(fields: [proofReceiptId], references: [id], onDelete: Cascade)
+  task           Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  contributor    Profile      @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+  @@index([contributorId, createdAt])
+}
+
+model AgentPolicy {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  ownerId            String
+  name               String
+  maxBudget          Int
+  allowedCategories  String
+  allowedRecipients  String
+  approvalThreshold  Int
+  enabled            Boolean  @default(true)
+  simulated          Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner              Profile  @relation("AgentPolicyOwner", fields: [ownerId], references: [id])
+  requests           AgentRequest[]
+  @@index([organizationId, enabled])
+}
+
+model AgentRequest {
+  id                  String   @id @default(uuid())
+  policyId            String
+  taskId              String
+  recipientId         String
+  requestedAmount     Int
+  status              String   @default("pending")
+  requiresHumanApproval Boolean @default(true)
+  approvedById        String?
+  decisionComment     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  policy              AgentPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  task                Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  recipient           Profile  @relation("AgentRequestRecipient", fields: [recipientId], references: [id])
+  approvedBy          Profile? @relation("AgentRequestApprover", fields: [approvedById], references: [id])
+  @@index([taskId, status])
+}
+
+model FinancialAudit {
+  id             String   @id @default(uuid())
+  organizationId String?
+  actorId        String?
+  action         String
+  entityType     String
+  entityId       String
+  amount         Int?
+  status         String
+  metadataJson   String
+  createdAt      DateTime @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor          Profile? @relation("AuditActor", fields: [actorId], references: [id])
+  @@index([organizationId, createdAt])
 }
 
 model ActivityEvent {

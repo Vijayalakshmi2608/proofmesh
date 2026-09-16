@@ -8,6 +8,9 @@ import { createTask, getTask, listTasks, updateTask } from "./services/taskServi
 import { generateRecipe, validateRecipe } from "./services/recipeService";
 import { runDeterministicChecks } from "./services/verificationService";
 import { releasePayout, submitEvidence } from "./services/workflowService";
+import { checkEligibility, listUnlockedTasks } from "./services/accessService";
+import { listAgentPolicies, requestAgentTask } from "./services/agentService";
+import { realMetrics } from "./services/metricsService";
 
 const requestFor = (role: string) => ({ header: () => role }) as never;
 const user = (role: string) => getDemoUser(requestFor(role));
@@ -55,5 +58,21 @@ describe("ProofMesh Demo Mode API services", () => {
     await expect(submitEvidence(user("contributor"), "task-003", { pullRequestUrl: "https://github.com/drift-monitor/api/pull/118", explanation: "This late submission should be rejected because the contract deadline has passed and the seeded task is expired.", idempotencyKey: "expired-test-key", evidence: [{ type: "pull_request", title: "PR", detail: "Late PR", href: "https://github.com/drift-monitor/api/pull/118" }] })).rejects.toMatchObject({ status: 409 });
     await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "7pT9K3xLsimulatedwallet", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "b".repeat(64) })).rejects.toMatchObject({ status: 409 });
     await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "7pT9K3xLsimulatedwallet", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "c".repeat(64) })).rejects.toMatchObject({ status: 409 });
+  });
+  it("unlocks an advanced task only from an active qualifying proof", async () => {
+    await expect(checkEligibility(user("contributor"), "task-002")).resolves.toMatchObject({ eligible: true, requirement: { requiredCategory: "reliability" }, satisfiedBy: expect.any(Array) });
+    await expect(listUnlockedTasks(user("contributor"))).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ title: "Ship multi-sig transaction simulator", eligible: true })]));
+    await expect(checkEligibility(user("public_verifier"), "task-002")).resolves.toMatchObject({ eligible: false });
+  });
+  it("enforces simulated agent allowlists and threshold approvals", async () => {
+    const policies = await listAgentPolicies(user("sponsor"));
+    const policy = policies[0];
+    const task = await prisma.task.findFirstOrThrow({ where: { category: "reliability" } });
+    const contributor = await prisma.profile.findUniqueOrThrow({ where: { stableId: "demo-contributor" } });
+    await expect(requestAgentTask(user("sponsor"), { policyId: policy.id, taskId: task.id, recipientId: contributor.id, requestedAmount: 18000, rationale: "Request a small simulated task assignment for the allowlisted contributor." })).resolves.toMatchObject({ simulated: true, requiresHumanApproval: false });
+    await expect(requestAgentTask(user("sponsor"), { policyId: policy.id, taskId: task.id, recipientId: contributor.id, requestedAmount: 30000, rationale: "Request a larger simulated assignment that crosses the human approval threshold." })).resolves.toMatchObject({ simulated: true, requiresHumanApproval: true, status: "awaiting_human_approval" });
+  });
+  it("reports real SQLite metrics instead of placeholder dashboard numbers", async () => {
+    await expect(realMetrics(user("sponsor"))).resolves.toMatchObject({ source: "sqlite", activeTasks: expect.any(Number), verifiedProofs: expect.any(Number), totalDevnetSettlement: expect.any(Number), proofReuseCount: expect.any(Number) });
   });
 });

@@ -11,6 +11,10 @@ import { generateRecipe, validateRecipe, createOutcomeContract, getOutcomeContra
 import { runDeterministicChecks } from "./services/verificationService";
 import { acceptTask, submitEvidence, fundTask, releasePayout } from "./services/workflowService";
 import { summarizeEvidence } from "./services/aiService";
+import { checkEligibility, listUnlockedTasks, applyWithProof, revokeProof } from "./services/accessService";
+import { listAgentPolicies, requestAgentTask, decideAgentRequest } from "./services/agentService";
+import { realMetrics } from "./services/metricsService";
+import { resetDemo } from "./services/demoService";
 
 export const apiRouter = Router();
 apiRouter.use((req, _res, next) => { req.demoUser = getDemoUser(req); next(); });
@@ -21,6 +25,7 @@ apiRouter.get("/health", (_req, res) => res.json({ data: { ok: true, service: "p
 apiRouter.get("/demo/session", (req, res) => res.json({ data: { user: req.demoUser, availableRoles: Object.values(demoUsers) } }));
 apiRouter.get("/organizations", handler((req) => listOrganizations(req.demoUser)));
 apiRouter.get("/tasks", handler((req) => listTasks(req.demoUser)));
+apiRouter.get("/tasks/unlocked", handler((req) => listUnlockedTasks(req.demoUser)));
 apiRouter.post("/tasks", handler((req) => createTask(req.demoUser, req.body)));
 apiRouter.post("/contracts/generate-recipe", handler((req) => generateRecipe(z.string().min(20).parse(req.body.prompt))));
 apiRouter.post("/contracts/validate-recipe", handler(async (req) => validateRecipe(req.body.recipe)));
@@ -29,6 +34,8 @@ apiRouter.get("/tasks/:id", handler((req) => getTask(req.demoUser, req.params.id
 apiRouter.get("/tasks/:id/contract", handler((req) => getOutcomeContract(req.demoUser, req.params.id)));
 apiRouter.patch("/tasks/:id", handler((req) => updateTask(req.demoUser, req.params.id, req.body)));
 apiRouter.post("/tasks/:id/accept", handler((req) => acceptTask(req.demoUser, req.params.id)));
+apiRouter.get("/tasks/:id/eligibility", handler((req) => checkEligibility(req.demoUser, req.params.id)));
+apiRouter.post("/tasks/:id/apply", handler((req) => applyWithProof(req.demoUser, req.params.id)));
 apiRouter.post("/tasks/:id/submit", handler((req) => submitEvidence(req.demoUser, req.params.id, req.body)));
 apiRouter.post("/tasks/:id/fund", handler((req) => fundTask(req.demoUser, req.params.id, req.body)));
 apiRouter.get("/submissions", handler((req) => listSubmissions(req.demoUser)));
@@ -42,9 +49,15 @@ apiRouter.post("/submissions/:id/review", handler((req) => reviewSubmission(req.
 apiRouter.post("/submissions/:id/release", handler((req) => releasePayout(req.demoUser, req.params.id, req.body)));
 apiRouter.get("/proofs", handler((req) => listProofs(req.demoUser)));
 apiRouter.get("/proofs/:id", handler((req) => getProof(req.demoUser, req.params.id)));
+apiRouter.post("/proofs/:id/revoke", handler((req) => revokeProof(req.demoUser, req.params.id)));
 apiRouter.get("/verify/:id", handler((req) => verifyProof(req.params.id)));
 apiRouter.get("/activity", handler((req) => listActivity(req.demoUser)));
 apiRouter.get("/dashboard/metrics", handler((req) => dashboardMetrics(req.demoUser)));
+apiRouter.get("/metrics/real", handler((req) => realMetrics(req.demoUser)));
+apiRouter.get("/agent/policies", handler((req) => listAgentPolicies(req.demoUser)));
+apiRouter.post("/agent/requests", handler((req) => requestAgentTask(req.demoUser, req.body)));
+apiRouter.post("/agent/requests/:id/decision", handler((req) => decideAgentRequest(req.demoUser, req.params.id, req.body)));
+apiRouter.post("/demo/reset", handler((req) => resetDemo(req.demoUser)));
 
 export async function closeApi() { await prisma.$disconnect(); }
 
