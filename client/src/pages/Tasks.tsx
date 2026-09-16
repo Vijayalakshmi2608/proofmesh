@@ -3,17 +3,19 @@ import { Link } from "react-router-dom";
 import { Filter, Plus, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button, EmptyState, PageHeader, SearchFilter, StatusBadge, TaskCard } from "../components/AppShell";
-import { tasks } from "../lib/mockData";
+import { useTasks } from "../hooks/useProofMeshApi";
 
 export default function Tasks() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "in_review" | "verified">("all");
-  const visibleTasks = useMemo(() => tasks.filter((task) => (filter === "all" || task.status === filter) && `${task.title} ${task.project} ${task.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase())), [filter, query]);
+  const { data: taskQuery } = useTasks();
+  const sourceTasks = taskQuery?.items ?? [];
+  const visibleTasks = useMemo(() => sourceTasks.filter((task) => (filter === "all" || task.status === filter) && `${task.title} ${task.project} ${task.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase())), [filter, query, sourceTasks]);
   return <div>
     <PageHeader eyebrow="Work registry" title="Tasks" description="Every task is a contract with a clear finish line, a funded escrow, and verifiable evidence." actions={<Link to="/tasks/new"><Button><Plus className="h-3.5 w-3.5" /> New task</Button></Link>} />
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex max-w-xl flex-1 items-center gap-2"><SearchFilter value={query} onChange={setQuery} /><button type="button" onClick={() => toast.info("Advanced filters are coming soon")} className="flex h-9 shrink-0 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-[11px] text-slate-500 hover:bg-white/[0.06] hover:text-slate-300"><SlidersHorizontal className="h-3.5 w-3.5" /> Filters</button></div><div className="flex items-center gap-1 rounded-lg border border-white/[0.07] bg-white/[0.02] p-1">{(["all", "active", "in_review", "verified"] as const).map((tab) => <button type="button" key={tab} onClick={() => setFilter(tab)} className={`rounded-md px-2.5 py-1.5 text-[10px] capitalize transition ${filter === tab ? "bg-white/[0.09] text-white" : "text-slate-600 hover:text-slate-300"}`}>{tab === "in_review" ? "In review" : tab}</button>)}</div></div>
     {visibleTasks.length ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{visibleTasks.map((task) => <TaskCard key={task.id} task={task} />)}</div> : <EmptyState icon={Filter} title="No tasks match this view" description="Try a different search or clear the status filter." action={<Button variant="secondary" onClick={() => { setQuery(""); setFilter("all"); }}>Clear filters</Button>} />}
-    <div className="mt-6 flex items-center gap-2 text-[11px] text-slate-600"><StatusBadge status="active" /> <span>Tasks are funded before they become visible to contributors.</span></div>
+    <div className="mt-6 flex items-center gap-2 text-[11px] text-slate-600"><StatusBadge status="active" /> <span>Tasks are funded before they become visible to contributors.</span>{taskQuery?.fallback && <span className="ml-auto rounded-md border border-amber-400/15 bg-amber-400/[0.05] px-2 py-1 text-[10px] text-amber-300">Using local demo data</span>}</div>
   </div>;
 }
 

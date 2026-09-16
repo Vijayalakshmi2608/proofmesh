@@ -1,14 +1,17 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowUpRight, CircleDollarSign, Clock3, FileCheck2, Github, MoreHorizontal, ShieldCheck, UsersRound } from "lucide-react";
 import { Button, ConfirmDialog, PageHeader, PaymentSummary, SectionHeading, StatusBadge, TaskStatusTimeline, VerificationChecklist } from "../components/AppShell";
-import { getSubmission, getTask } from "../lib/mockData";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useSubmission, useTask } from "../hooks/useProofMeshApi";
 
 export default function TaskDetail() {
   const { id = "task-001" } = useParams();
-  const task = getTask(id);
-  const submission = getSubmission("sub-001");
+  const { data: taskQuery } = useTask(id);
+  const { data: submissionQuery } = useSubmission("sub-001");
+  const task = taskQuery?.item;
+  const submission = submissionQuery?.item;
+  if (!task || !submission) return null;
   const [confirmOpen, setConfirmOpen] = useState(false);
   return <div>
     <PageHeader eyebrow={`${task.project} · ${task.id}`} title={task.title} description={task.summary} backHref="/tasks" actions={<><StatusBadge status={task.status} /><button type="button" onClick={() => toast.info("Task actions are mocked")} aria-label="More task actions" className="rounded-lg border border-white/[0.08] p-2 text-slate-500 hover:bg-white/[0.06] hover:text-slate-200"><MoreHorizontal className="h-4 w-4" /></button></>} />

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useCurrentDemoUser } from "../contexts/DemoUserContext";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -167,11 +168,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 }
 
 export function Topbar({ onMenu, onCommand }: { onMenu: () => void; onCommand: () => void }) {
+  const { role, user, setRole } = useCurrentDemoUser();
+  const roleLabel = role.replace("_", " ");
   return <header className="sticky top-0 z-20 flex h-[65px] items-center border-b border-white/[0.07] bg-[#0b0d12]/90 px-4 backdrop-blur-xl sm:px-6 lg:ml-[248px] lg:px-8">
     <button onClick={onMenu} aria-label="Open navigation" className="mr-3 rounded-lg p-2 text-slate-500 hover:bg-white/[0.06] hover:text-slate-200 lg:hidden"><Menu className="h-5 w-5" /></button>
     <button type="button" onClick={onCommand} className="hidden h-9 min-w-[220px] items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 text-left text-[12px] text-slate-600 transition hover:border-white/[0.12] hover:text-slate-400 sm:flex"><Search className="h-3.5 w-3.5" /><span>Search anything…</span><kbd className="ml-auto rounded border border-white/[0.08] px-1.5 py-0.5 font-mono text-[10px] text-slate-600">⌘ K</kbd></button>
     <button type="button" onClick={onCommand} aria-label="Search" className="rounded-lg p-2 text-slate-500 hover:bg-white/[0.06] hover:text-slate-200 sm:hidden"><Search className="h-4 w-4" /></button>
-    <div className="ml-auto flex items-center gap-2.5"><button type="button" aria-label="Notifications" onClick={() => toast.info("No new notifications")} className="relative rounded-lg p-2 text-slate-500 hover:bg-white/[0.06] hover:text-slate-200"><Bell className="h-4 w-4" /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-violet-400" /></button><WalletButton /></div>
+    <div className="ml-auto flex items-center gap-2.5"><span className="hidden rounded-md border border-violet-400/20 bg-violet-400/[0.07] px-2 py-1 text-[10px] font-medium capitalize text-violet-200 sm:inline-flex">Demo Mode · {roleLabel}</span><label className="sr-only" htmlFor="demo-role">Demo role</label><select id="demo-role" value={role} onChange={(event) => { setRole(event.target.value as typeof role); toast.success(`Switched to ${event.target.value.replace("_", " ")} demo role`); }} aria-label="Switch demo role" className="block h-8 max-w-[98px] rounded-lg border border-white/[0.08] bg-white/[0.035] px-1.5 text-[10px] capitalize text-slate-400 outline-none hover:border-violet-400/25 sm:max-w-none sm:px-2"><option value="sponsor">Sponsor</option><option value="contributor">Contributor</option><option value="reviewer">Reviewer</option><option value="public_verifier">Public verifier</option></select><button type="button" aria-label="Notifications" onClick={() => toast.info("No new notifications")} className="relative rounded-lg p-2 text-slate-500 hover:bg-white/[0.06] hover:text-slate-200"><Bell className="h-4 w-4" /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-violet-400" /></button><WalletButton /></div>
   </header>;
 }
 

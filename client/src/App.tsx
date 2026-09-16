@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AppShell } from "./components/AppShell";
+import { DemoUserProvider } from "./contexts/DemoUserContext";
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import { NewTask } from "./pages/Tasks";
@@ -16,7 +17,7 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30
 function Workspace({ children }: { children: React.ReactNode }) { return <AppShell>{children}</AppShell>; }
 
 export default function App() {
-  return <QueryClientProvider client={queryClient}><BrowserRouter><Toaster theme="dark" position="bottom-right" toastOptions={{ className: "proof-toast" }} /><Routes>
+  return <QueryClientProvider client={queryClient}><DemoUserProvider><BrowserRouter><Toaster theme="dark" position="bottom-right" toastOptions={{ className: "proof-toast" }} /><Routes>
     <Route path="/" element={<Landing />} />
     <Route path="/dashboard" element={<Workspace><Dashboard /></Workspace>} />
     <Route path="/tasks" element={<Workspace><Tasks /></Workspace>} />
@@ -27,5 +28,5 @@ export default function App() {
     <Route path="/proofs/:id" element={<Workspace><ProofDetail /></Workspace>} />
     <Route path="/settings" element={<Workspace><Settings /></Workspace>} />
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
-  </Routes></BrowserRouter></QueryClientProvider>;
+  </Routes></BrowserRouter></DemoUserProvider></QueryClientProvider>;
 }

@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, CheckCircle2, Clock3, FileCheck2, Flag, GitCommitHorizontal, MessageSquare, ScanLine, ShieldCheck, UserRoundCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button, ConfirmDialog, EvidenceCard, PageHeader, PaymentSummary, SectionHeading, StatusBadge } from "../components/AppShell";
-import { getSubmission, getTask } from "../lib/mockData";
+import { getTask } from "../lib/mockData";
+import { useSubmission } from "../hooks/useProofMeshApi";
 
 export default function SubmissionDetail() {
   const { id = "sub-001" } = useParams();
-  const { data: submission } = useQuery({ queryKey: ["submission", id], queryFn: async () => getSubmission(id) });
+  const { data: submissionQuery } = useSubmission(id);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const submission = submissionQuery?.item;
   if (!submission) return null;
   const task = getTask(submission.taskId);
   return <div>
