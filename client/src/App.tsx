@@ -1,42 +1,31 @@
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Toaster } from "sonner";
+import { AppShell } from "./components/AppShell";
+import Dashboard from "./pages/Dashboard";
+import Landing from "./pages/Landing";
+import { NewTask } from "./pages/Tasks";
+import Tasks from "./pages/Tasks";
+import TaskDetail from "./pages/TaskDetail";
+import SubmissionDetail from "./pages/SubmissionDetail";
+import Proofs, { ProofDetail } from "./pages/Proofs";
+import Settings from "./pages/Settings";
 
+const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } });
 
-function Router() {
-  return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
-  );
+function Workspace({ children }: { children: React.ReactNode }) { return <AppShell>{children}</AppShell>; }
+
+export default function App() {
+  return <QueryClientProvider client={queryClient}><BrowserRouter><Toaster theme="dark" position="bottom-right" toastOptions={{ className: "proof-toast" }} /><Routes>
+    <Route path="/" element={<Landing />} />
+    <Route path="/dashboard" element={<Workspace><Dashboard /></Workspace>} />
+    <Route path="/tasks" element={<Workspace><Tasks /></Workspace>} />
+    <Route path="/tasks/new" element={<Workspace><NewTask /></Workspace>} />
+    <Route path="/tasks/:id" element={<Workspace><TaskDetail /></Workspace>} />
+    <Route path="/submissions/:id" element={<Workspace><SubmissionDetail /></Workspace>} />
+    <Route path="/proofs" element={<Workspace><Proofs /></Workspace>} />
+    <Route path="/proofs/:id" element={<Workspace><ProofDetail /></Workspace>} />
+    <Route path="/settings" element={<Workspace><Settings /></Workspace>} />
+    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+  </Routes></BrowserRouter></QueryClientProvider>;
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
-function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
-}
-
-export default App;
