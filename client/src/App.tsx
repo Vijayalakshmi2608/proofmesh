@@ -14,6 +14,8 @@ import Settings from "./pages/Settings";
 import VerifyProof from "./pages/VerifyProof";
 import ProofAccess from "./pages/ProofAccess";
 import AgentDemo from "./pages/AgentDemo";
+import ProofGraph from "./pages/ProofGraph";
+import DemoGuide from "./pages/DemoGuide";
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } });
 
@@ -31,8 +33,11 @@ export default function App() {
     <Route path="/proofs/:id" element={<Workspace><ProofDetail /></Workspace>} />
     <Route path="/settings" element={<Workspace><Settings /></Workspace>} />
     <Route path="/verify/:proofId" element={<VerifyProof />} />
+    <Route path="/verify/proof/:id" element={<VerifyProof />} />
     <Route path="/access" element={<Workspace><ProofAccess /></Workspace>} />
     <Route path="/agents" element={<Workspace><AgentDemo /></Workspace>} />
+    <Route path="/graph" element={<Workspace><ProofGraph /></Workspace>} />
+    <Route path="/demo" element={<Workspace><DemoGuide /></Workspace>} />
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Routes></BrowserRouter></DemoUserProvider></QueryClientProvider>;
 }

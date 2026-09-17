@@ -32,7 +32,7 @@ describe("ProofMesh Demo Mode API services", () => {
     await expect(reviewSubmission(user("reviewer"), "sub-001", { status: "changes_requested", comment: "Please add the runbook evidence." })).resolves.toMatchObject({ id: "sub-001" });
   });
   it("only exposes public receipts to public verifiers", async () => {
-    await expect(listProofs(user("public_verifier"))).resolves.toHaveLength(1);
+    await expect(listProofs(user("public_verifier"))).resolves.toHaveLength(5);
     await expect(getProof(user("public_verifier"), "proof-001")).resolves.toMatchObject({ status: "active" });
   });
   it("denies private task access outside an organization and validates task input", async () => {

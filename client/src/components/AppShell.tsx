@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   ArrowUpRight,
   BadgeCheck,
+  BookOpen,
   Bot,
   Bell,
   Blocks,
@@ -25,6 +26,7 @@ import {
   FileCode2,
   Filter,
   Github,
+  GitBranch,
   Hash,
   Inbox,
   LayoutDashboard,
@@ -54,6 +56,7 @@ export const navItems = [
   { label: "Submissions", href: "/submissions/sub-001", icon: Inbox },
   { label: "Proof receipts", href: "/proofs", icon: BadgeCheck },
   { label: "Proof-to-Access", href: "/access", icon: ShieldCheck },
+  { label: "Proof Graph", href: "/graph", icon: GitBranch },
   { label: "Agent demo", href: "/agents", icon: Bot },
 ];
 
@@ -93,6 +96,8 @@ export function StatusBadge({ status, className }: { status: TaskStatus | Submis
     needs_changes: { label: "Needs changes", className: "status-danger", icon: X },
     rejected: { label: "Rejected", className: "status-danger", icon: X },
     issued: { label: "Issued", className: "status-verified", icon: BadgeCheck },
+    revoked: { label: "Revoked", className: "status-danger", icon: X },
+    expired: { label: "Expired", className: "status-danger", icon: X },
   };
   const item = config[status] ?? config.pending;
   const Icon = item.icon;
@@ -127,6 +132,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         <div className="mt-8 px-2 pb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">Workspace tools</div>
         <nav className="space-y-1">
           <NavLink to="/settings" onClick={onClose} className={({ isActive }) => cn("group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition", isActive ? "bg-white/[0.075] text-white" : "text-slate-500 hover:bg-white/[0.045] hover:text-slate-200")}><Settings className="h-[17px] w-[17px] text-slate-600 group-hover:text-slate-400" /><span>Settings</span></NavLink>
+          <NavLink to="/demo" onClick={onClose} className={({ isActive }) => cn("group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition", isActive ? "bg-white/[0.075] text-white" : "text-slate-500 hover:bg-white/[0.045] hover:text-slate-200")}><BookOpen className="h-[17px] w-[17px] text-slate-600 group-hover:text-slate-400" /><span>Demo Guide</span></NavLink>
           <button type="button" onClick={() => toast.info("Help center is coming soon")} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-slate-500 transition hover:bg-white/[0.045] hover:text-slate-200"><CircleHelp className="h-[17px] w-[17px] text-slate-600 group-hover:text-slate-400" /><span>Help center</span></button>
         </nav>
         <div className="mt-auto rounded-xl border border-violet-400/15 bg-[linear-gradient(135deg,rgba(128,119,255,0.13),rgba(128,119,255,0.02))] p-3.5">
@@ -152,6 +158,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     { label: "Create new task", hint: "Navigate", icon: Plus, href: "/tasks/new" },
     { label: "Review submissions", hint: "Navigate", icon: FileCheck2, href: "/submissions/sub-001" },
     { label: "View proof receipts", hint: "Navigate", icon: BadgeCheck, href: "/proofs" },
+    { label: "Open Proof Graph", hint: "Navigate", icon: GitBranch, href: "/graph" },
+    { label: "Open Demo Guide", hint: "Navigate", icon: BookOpen, href: "/demo" },
   ];
   const filtered = actions.filter((action) => action.label.toLowerCase().includes(query.toLowerCase()));
   useEffect(() => { if (!open) setQuery(""); }, [open]);
@@ -237,7 +245,7 @@ export function ProofReceiptCard({ proof }: { proof: ProofReceipt }) {
 
 export function ActivityTimeline({ events = activity, limit }: { events?: ActivityEvent[]; limit?: number }) {
   const shown = limit ? events.slice(0, limit) : events;
-  return <div className="space-y-0">{shown.map((event, index) => <Link to={event.href ?? "#"} key={event.id} onClick={(e) => { if (!event.href) { e.preventDefault(); toast.info("Activity details are mocked"); } }} className="group flex gap-3 py-3 first:pt-0 last:pb-0"><div className="flex flex-col items-center"><div className={cn("mt-0.5 flex h-7 w-7 items-center justify-center rounded-full border", event.color === "emerald" && "border-emerald-400/20 bg-emerald-400/10 text-emerald-300", event.color === "violet" && "border-violet-400/20 bg-violet-400/10 text-violet-300", event.color === "amber" && "border-amber-400/20 bg-amber-400/10 text-amber-300", event.color === "blue" && "border-sky-400/20 bg-sky-400/10 text-sky-300")}>{event.kind === "verified" ? <CheckCircle2 className="h-3.5 w-3.5" /> : event.kind === "issued" ? <BadgeCheck className="h-3.5 w-3.5" /> : event.kind === "funded" ? <CircleDollarSign className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</div>{index < shown.length - 1 && <div className="my-1 h-full w-px bg-white/[0.07]" />}</div><div className="min-w-0 flex-1 border-b border-white/[0.06] pb-3 group-last:border-0"><div className="flex items-start justify-between gap-3"><p className="text-[12px] font-medium text-slate-300 group-hover:text-white">{event.title}</p><span className="shrink-0 text-[10px] text-slate-600">{event.timestamp}</span></div><p className="mt-1 truncate text-[11px] text-slate-600">{event.detail}</p></div></Link>)}</div>;
+  return <div className="space-y-0">{shown.map((event, index) => <Link to={event.href ?? "#"} key={event.id} onClick={(e) => { if (!event.href) { e.preventDefault(); toast.info("Activity details are mocked"); } }} className="group flex gap-3 py-3 first:pt-0 last:pb-0"><div className="flex flex-col items-center"><div className={cn("mt-0.5 flex h-7 w-7 items-center justify-center rounded-full border", event.color === "emerald" && "border-emerald-400/20 bg-emerald-400/10 text-emerald-300", event.color === "violet" && "border-violet-400/20 bg-violet-400/10 text-violet-300", event.color === "amber" && "border-amber-400/20 bg-amber-400/10 text-amber-300", event.color === "blue" && "border-sky-400/20 bg-sky-400/10 text-sky-300", event.color === "red" && "border-red-400/20 bg-red-400/10 text-red-300")}>{event.kind === "verified" ? <CheckCircle2 className="h-3.5 w-3.5" /> : event.kind === "issued" ? <BadgeCheck className="h-3.5 w-3.5" /> : event.kind === "funded" ? <CircleDollarSign className="h-3.5 w-3.5" /> : event.kind === "revoked" ? <X className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</div>{index < shown.length - 1 && <div className="my-1 h-full w-px bg-white/[0.07]" />}</div><div className="min-w-0 flex-1 border-b border-white/[0.06] pb-3 group-last:border-0"><div className="flex items-start justify-between gap-3"><p className="text-[12px] font-medium text-slate-300 group-hover:text-white">{event.title}</p><span className="shrink-0 text-[10px] text-slate-600">{event.timestamp}</span></div><p className="mt-1 truncate text-[11px] text-slate-600">{event.detail}</p></div></Link>)}</div>;
 }
 
 export function EmptyState({ icon: Icon = Inbox, title, description, action }: { icon?: typeof Inbox; title: string; description: string; action?: ReactNode }) {

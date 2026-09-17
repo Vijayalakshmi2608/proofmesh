@@ -16,7 +16,7 @@ pnpm db:push
 pnpm db:seed
 ```
 
-The local SQLite database is created from `DATABASE_URL`. Copy `.env.example` to `.env` if preferred. Demo seed data includes three tasks, two submissions, one active proof, a Proof-to-Access rule, an agent policy, an agent request, and financial audit events.
+The local SQLite database is created from `DATABASE_URL`. Copy `.env.example` to `.env` if preferred. Demo seed data includes five tasks, four named contributors, six proof receipts (including active and revoked states), multiple submissions, ten activity events, Proof-to-Access rules, an agent policy, an agent request, and financial audit events.
 
 ## Run the app
 
@@ -57,7 +57,7 @@ pnpm test
 pnpm build
 ```
 
-The test suite covers policy and recipe validation, public proof visibility, task lifecycle constraints, Proof-to-Access eligibility, agent allowlists and approval thresholds, payout safety, metrics, and API validation. Browser smoke testing should cover `/`, `/dashboard`, `/tasks`, `/tasks/new`, `/tasks/task-001`, `/submissions/sub-001`, `/proofs`, `/proofs/proof-001`, `/verify/proof-001`, `/access`, `/agents`, and `/settings`.
+The test suite covers policy and recipe validation, public proof visibility, task lifecycle constraints, Proof-to-Access eligibility, agent allowlists and approval thresholds, payout safety, metrics, and API validation. Browser smoke testing should cover `/`, `/dashboard`, `/tasks`, `/tasks/new`, `/tasks/task-001`, `/submissions/sub-001`, `/proofs`, `/proofs/proof-001`, `/verify/proof-001`, `/verify/proof/proof-001`, `/access`, `/agents`, `/graph`, `/demo`, and `/settings`.
 
 ## Security posture
 
@@ -65,7 +65,7 @@ All workflow services perform server-side authorization and Zod input validation
 
 ## Known limitations
 
-This hackathon prototype uses Demo Mode identities and a local SQLite database. GitHub and deployment checks are deterministic simulations around submitted metadata rather than live provider attestations. OpenRouter recipe generation is optional and disabled unless a server-side connector is configured. Agent execution is simulated; it does not autonomously execute code, approve work, alter contracts, or move funds. Proof revocation is modeled locally and does not yet propagate to external credential registries. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
+This hackathon prototype uses Demo Mode identities and a local SQLite database. GitHub and deployment checks are deterministic simulations around submitted metadata rather than live provider attestations. OpenRouter recipe generation is optional and disabled unless a server-side connector is configured. Agent execution is simulated; it does not autonomously execute code, approve work, alter contracts, or move funds. Proof revocation is modeled locally and does not yet propagate to external credential registries. See [ARCHITECTURE.md](ARCHITECTURE.md), [DEMO.md](DEMO.md), [LIMITATIONS.md](LIMITATIONS.md), and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ## Regulatory disclaimer
 
