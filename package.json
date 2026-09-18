@@ -13,7 +13,7 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:generate": "prisma generate",
-    "test": "pnpm db:seed && vitest run --root . server/api.test.ts",
+    "test": "pnpm db:seed && vitest run --root . server/api.test.ts client/src/hooks/useSolanaWalletDiagnostics.test.ts",
     "dev:server": "tsx server/index.ts"
   },
   "dependencies": {

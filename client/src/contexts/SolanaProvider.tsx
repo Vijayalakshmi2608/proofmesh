@@ -7,9 +7,9 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 
 export const SOLANA_NETWORK = "devnet" as const;
 export const DEVNET_USDC_MINT = import.meta.env.VITE_DEVNET_USDC_MINT ?? "DevnetTestTokenMint111111111111111111111111111";
+export const SOLANA_RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL?.trim() || clusterApiUrl(SOLANA_NETWORK);
 
 export function SolanaProvider({ children }: { children: ReactNode }) {
-  const endpoint = import.meta.env.VITE_SOLANA_RPC_URL ?? clusterApiUrl(SOLANA_NETWORK);
   const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
-  return <ConnectionProvider endpoint={endpoint}><WalletProvider wallets={wallets} autoConnect={false}><WalletModalProvider>{children}</WalletModalProvider></WalletProvider></ConnectionProvider>;
+  return <ConnectionProvider endpoint={SOLANA_RPC_URL}><WalletProvider wallets={wallets} autoConnect><WalletModalProvider>{children}</WalletModalProvider></WalletProvider></ConnectionProvider>;
 }

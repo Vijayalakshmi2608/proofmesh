@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCurrentDemoUser } from "../contexts/DemoUserContext";
 import { SOLANA_NETWORK } from "../contexts/SolanaProvider";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useSolanaWalletDiagnostics } from "../hooks/useSolanaWalletDiagnostics";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import {
   ArrowLeft,
@@ -75,13 +75,23 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
 }
 
 export function WalletButton() {
-  const { publicKey, connected, connecting, disconnect } = useWallet();
+  const { publicKey, connected, connecting, disconnect, select, connect, wallets, wallet, adapterError, walletInstalled, networkStatus } = useSolanaWalletDiagnostics();
   const { setVisible } = useWalletModal();
   const address = publicKey?.toBase58();
   const shortAddress = address ? `${address.slice(0, 4)}…${address.slice(-4)}` : "Connect wallet";
   const copyAddress = async () => { if (!address) return; await navigator.clipboard?.writeText(address); toast.success("Wallet address copied"); };
+  const connectWallet = async () => {
+    try {
+      const phantom = wallets.find((item) => item.adapter.name.toLowerCase() === "phantom");
+      if (!phantom || !walletInstalled) { toast.error("Phantom is not installed or available in this browser."); return; }
+      await select(phantom.adapter.name);
+      await connect();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Phantom connection rejected. Try again.");
+    }
+  };
   return (
-    <div className="flex items-center gap-1"><span className="hidden rounded-md border border-amber-400/20 bg-amber-400/[0.06] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-200 sm:inline-flex">Solana {SOLANA_NETWORK}</span><button type="button" onClick={() => { if (connected) { disconnect().catch(() => toast.error("Wallet disconnect failed")); } else { setVisible(true); } }} className="group inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 text-[12px] font-medium text-slate-200 transition hover:border-violet-400/30 hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-violet-400/60" aria-label={connected ? "Disconnect wallet" : "Connect wallet"}><span className={`h-1.5 w-1.5 rounded-full ${connected ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-slate-600"}`} /><span className="font-mono text-[11px]">{connecting ? "Connecting…" : shortAddress}</span><ChevronDown className="h-3.5 w-3.5 text-slate-500 transition group-hover:text-slate-300" /></button>{connected && <button type="button" onClick={copyAddress} className="sr-only">Copy wallet address</button>}</div>
+    <div className="flex items-center gap-1"><span className={`hidden rounded-md border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] sm:inline-flex ${networkStatus === "wrong_network" ? "border-red-400/20 bg-red-400/[0.06] text-red-200" : "border-amber-400/20 bg-amber-400/[0.06] text-amber-200"}`}>{networkStatus === "wrong_network" ? "Wrong network" : `Solana ${SOLANA_NETWORK}`}</span><button type="button" onClick={() => { if (connected) { disconnect().catch(() => toast.error("Wallet disconnect failed")); } else if (wallet) { void connectWallet(); } else { setVisible(true); } }} className="group inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 text-[12px] font-medium text-slate-200 transition hover:border-violet-400/30 hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-violet-400/60" aria-label={connected ? "Disconnect wallet" : "Connect wallet"} title={adapterError ?? "Connect Phantom on Solana Devnet"}><span className={`h-1.5 w-1.5 rounded-full ${connected && networkStatus !== "wrong_network" ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : networkStatus === "wrong_network" ? "bg-red-400" : "bg-slate-600"}`} /><span className="font-mono text-[11px]">{connecting ? "Connecting…" : shortAddress}</span><ChevronDown className="h-3.5 w-3.5 text-slate-500 transition group-hover:text-slate-300" /></button>{connected && <button type="button" onClick={copyAddress} className="sr-only">Copy wallet address</button>}</div>
   );
 }
 

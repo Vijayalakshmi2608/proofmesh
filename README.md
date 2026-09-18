@@ -16,7 +16,7 @@ pnpm db:push
 pnpm db:seed
 ```
 
-The local SQLite database is created from `DATABASE_URL`. Copy `.env.example` to `.env` if preferred. Demo seed data includes five tasks, four named contributors, six proof receipts (including active and revoked states), multiple submissions, ten activity events, Proof-to-Access rules, an agent policy, an agent request, and financial audit events.
+The local SQLite database is created from `DATABASE_URL`. Demo seed data includes five tasks, four named contributors, six proof receipts (including active and revoked states), multiple submissions, ten activity events, Proof-to-Access rules, an agent policy, an agent request, and financial audit events.
 
 ## Run the app
 
@@ -39,15 +39,16 @@ Demo Mode is not production authentication. It provides stable sponsor, contribu
 
 Use **Settings → Demo Mode → Reset Demo Mode** to restore the seeded walkthrough. Reset is restricted to Demo Mode sponsor/admin roles and does not move funds or touch external services.
 
-## Devnet instructions
+## Real Phantom wallet and Devnet instructions
 
-1. Install a Solana wallet extension such as Phantom.
-2. Switch the wallet network to **Devnet**.
-3. Connect from the ProofMesh workspace.
-4. Use the explicit transaction preview before confirming any simulated escrow or payout action.
-5. Fund the wallet with Devnet SOL from a public faucet if a real wallet signature is being tested.
+1. Install [Phantom](https://phantom.app/download) for your browser.
+2. In Phantom, open the network selector and switch the active network to **Devnet**.
+3. Start ProofMesh locally with `pnpm dev`, open **Settings → Wallets**, and choose **Connect Phantom**.
+4. Confirm that the diagnostics panel shows the connected public key, **Solana Devnet**, reachable RPC, and a real SOL balance. ProofMesh never displays a fake balance.
+5. Request free Devnet SOL from the [Solana faucet](https://faucet.solana.com/) or another trusted Devnet faucet, then use **Refresh balance**.
+6. If you use a private or paid Devnet RPC, set `VITE_SOLANA_RPC_URL` in the local environment to an HTTPS Devnet endpoint. If unset, ProofMesh uses `https://api.devnet.solana.com`.
 
-The product currently labels blockchain activity as simulated or Devnet-only. No mainnet funds are used. A production deployment must replace the simulated settlement path with an audited escrow program, configured mint, transaction confirmation, replay protection, and incident recovery procedures.
+The wallet connection and balance read use the real Phantom adapter and Solana Devnet RPC. This phase does not send transactions, request signatures, or implement escrow/payouts. Phantom does not expose its active network through the current adapter API in every browser; when that signal is unavailable, the UI explicitly shows **Devnet target · wallet network unverified** and instructs you to switch Phantom manually rather than silently treating it as Devnet.
 
 ## Tests and build
 
@@ -57,7 +58,7 @@ pnpm test
 pnpm build
 ```
 
-The test suite covers policy and recipe validation, public proof visibility, task lifecycle constraints, Proof-to-Access eligibility, agent allowlists and approval thresholds, payout safety, metrics, and API validation. Browser smoke testing should cover `/`, `/dashboard`, `/tasks`, `/tasks/new`, `/tasks/task-001`, `/submissions/sub-001`, `/proofs`, `/proofs/proof-001`, `/verify/proof-001`, `/verify/proof/proof-001`, `/access`, `/agents`, `/graph`, `/demo`, and `/settings`.
+The test suite covers policy and recipe validation, public proof visibility, task lifecycle constraints, Proof-to-Access eligibility, agent allowlists and approval thresholds, payout safety, metrics, API validation, wallet state classification, and a lightweight live Devnet RPC request. Browser smoke testing should cover `/`, `/dashboard`, `/tasks`, `/tasks/new`, `/tasks/task-001`, `/submissions/sub-001`, `/proofs`, `/proofs/proof-001`, `/verify/proof-001`, `/verify/proof/proof-001`, `/access`, `/agents`, `/graph`, `/demo`, and `/settings`.
 
 ## Security posture
 
