@@ -51,6 +51,11 @@ describe("ProofMesh Demo Mode API services", () => {
     expect(result.valid).toBe(false);
     await expect(generateRecipe("Define a measurable task for a Solana indexer with pull request evidence and a human reviewer.")).resolves.toMatchObject({ modelName: expect.any(String), validation: expect.any(Object) });
   });
+  it("accepts explicit ALL and ANY proof recipes", () => {
+    const base = { deliverables: ["Ship verified work"], acceptanceCriteria: [{ label: "Checks pass", description: "All required checks pass before review.", measurable: true }], requiredEvidence: [{ type: "document" as const, label: "Explanation", required: true }], automatedChecks: [], humanChecks: [{ label: "Review", instruction: "Reviewer checks the outcome." }], disputeWindowHours: 72, failureBehavior: "request_changes" as const, policyVersion: "1.0" };
+    expect(validateRecipe({ ...base, proofRecipe: { title: "Capability gate", description: "A prior proof unlocks this task.", operator: "all", requirements: [{ label: "Active reliability proof", proofType: "reliability", requiredStatus: "active", minimumCount: 1 }] } }).valid).toBe(true);
+    expect(validateRecipe({ ...base, proofRecipe: { title: "Alternate capability gate", description: "Either qualifying proof unlocks this task.", operator: "any", requirements: [{ label: "Program proof", proofType: "program_development", requiredStatus: "active", minimumCount: 1 }, { label: "Testing proof", proofType: "smart_contract_testing", requiredStatus: "active", minimumCount: 1 }] } }).valid).toBe(true);
+  });
   it("runs deterministic checks and records a server-side verification result", async () => {
     await expect(runDeterministicChecks(user("reviewer"), "sub-001")).resolves.toMatchObject({ submissionId: "sub-001", checks: expect.any(Array), recipeHash: expect.any(String) });
   });

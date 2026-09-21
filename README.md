@@ -4,7 +4,7 @@ ProofMesh is an outcome-bound work verification and settlement platform for Sola
 
 ## Product surfaces
 
-The public landing page explains the workflow, architecture, benefits, Devnet-only status, and pilot path. The workspace includes task creation, contributor submission, reviewer decisions, public proof verification, Proof-to-Access eligibility, and a simulated AI-agent governance surface.
+The public landing page explains the workflow, architecture, benefits, Devnet-only status, and pilot path. The workspace includes task creation, contributor submission, reviewer decisions, public proof verification, Proof-to-Access eligibility, and a simulated AI-agent governance surface. Sponsors can author reusable Proof Recipes with strict **ALL** or **ANY** logic. Each recipe is hashed with the Outcome Contract, persisted server-side, and evaluated against active public receipt metadata only.
 
 ## Local setup
 
