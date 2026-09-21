@@ -33,11 +33,18 @@ pnpm build
 DATABASE_URL="file:./dev.db" NODE_ENV=production node dist/index.js
 ```
 
-## Demo Mode
+## Two explicit application modes
 
-Demo Mode is not production authentication. It provides stable sponsor, contributor, reviewer, admin, and public-verifier identities. The selected role is persisted locally for the browser, while permissions are checked on the server from the controlled demo role header. Browser-supplied organization IDs are never trusted.
+ProofMesh starts in **Demo Mode** so a judge can explore the complete workflow without Phantom, Devnet SOL, or configuration. Demo Mode uses stable sponsor, contributor, reviewer, and public-verifier identities, seeded Task A/Task B records, and server-validated role permissions. Browser-supplied organization IDs are never trusted.
 
-Use **Settings → Demo Mode → Reset Demo Mode** to restore the seeded walkthrough. Reset is restricted to Demo Mode sponsor/admin roles and does not move funds or touch external services.
+The mode switch is available in the workspace topbar and under **Settings → Demo Mode**:
+
+| Mode | Wallet requirement | Financial behavior |
+| --- | --- | --- |
+| **Demo Mode** | None | Uses isolated records and deterministic IDs such as `demo-tx-task-002-fund`. Every action is labeled **DEMO — Simulated Transaction** and never calls Solana. |
+| **Real Devnet** | Phantom connected to Solana Devnet | Requires the real wallet, Devnet RPC, and explicit wallet confirmation. It never silently falls back to simulation. |
+
+For the two-to-three-minute walkthrough, choose **Demo Mode**, open the active task, accept it, submit evidence, switch the demo role to Reviewer, run checks, approve, and use the simulated payout panel to view the receipt. Use **Settings → Demo Mode → Reset Demo** to restore the deterministic dataset; reset does not move funds or touch external Devnet data.
 
 ## Real Phantom wallet and Devnet instructions
 
@@ -48,7 +55,7 @@ Use **Settings → Demo Mode → Reset Demo Mode** to restore the seeded walkthr
 5. Request free Devnet SOL from the [Solana faucet](https://faucet.solana.com/) or another trusted Devnet faucet, then use **Refresh balance**.
 6. If you use a private or paid Devnet RPC, set `VITE_SOLANA_RPC_URL` in the local environment to an HTTPS Devnet endpoint. If unset, ProofMesh uses `https://api.devnet.solana.com`.
 
-The wallet connection and balance read use the real Phantom adapter and Solana Devnet RPC. This phase does not send transactions, request signatures, or implement escrow/payouts. Phantom does not expose its active network through the current adapter API in every browser; when that signal is unavailable, the UI explicitly shows **Devnet target · wallet network unverified** and instructs you to switch Phantom manually rather than silently treating it as Devnet.
+The wallet connection and balance read use the real Phantom adapter and Solana Devnet RPC. Real Devnet mode requires Phantom and never fakes a connected wallet or balance. Phantom does not expose its active network through the current adapter API in every browser; when that signal is unavailable, the UI explicitly shows **Devnet target · wallet network unverified** and instructs you to switch Phantom manually rather than silently treating it as Devnet. Demo Mode remains available as the no-wallet path.
 
 ## Tests and build
 
