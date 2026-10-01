@@ -6,6 +6,8 @@ ProofMesh is an outcome-bound work verification and settlement platform for Sola
 
 The public landing page explains the workflow, architecture, benefits, Devnet-only status, and pilot path. The workspace includes task creation, contributor submission, reviewer decisions, public proof verification, Proof-to-Access eligibility, and a simulated AI-agent governance surface. Sponsors can author reusable Proof Recipes with strict **ALL** or **ANY** logic. Each recipe is hashed with the Outcome Contract, persisted server-side, and evaluated against active public receipt metadata only.
 
+Proof receipts now expose an explicit credential commitment layer: network (`demo` or `solana-devnet`), commitment hash, credential version, issuance signature when a real Devnet payout exists, and revocation signature when a receipt is revoked. Demo Mode labels this as an application-level commitment ledger; it does not claim that a Solana credential program has been deployed. Real Devnet credential-program support is integration-ready through `SOLANA_CREDENTIAL_PROGRAM` but remains opt-in and unclaimed until an audited program address is configured.
+
 ## Local setup
 
 ```bash

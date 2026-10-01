@@ -33,7 +33,7 @@ describe("ProofMesh Demo Mode API services", () => {
   });
   it("only exposes public receipts to public verifiers", async () => {
     await expect(listProofs(user("public_verifier"))).resolves.toHaveLength(5);
-    await expect(getProof(user("public_verifier"), "proof-001")).resolves.toMatchObject({ status: "active" });
+    await expect(getProof(user("public_verifier"), "proof-001")).resolves.toMatchObject({ status: "active", credential: { network: "demo", commitment: expect.any(String), program: "demo-proofmesh-ledger-v1", version: 1 } });
   });
   it("denies private task access outside an organization and validates task input", async () => {
     await expect(listTasks(user("public_verifier"))).resolves.toHaveLength(0);
@@ -61,8 +61,8 @@ describe("ProofMesh Demo Mode API services", () => {
   });
   it("prevents expired submissions and mismatched policy-hash payouts", async () => {
     await expect(submitEvidence(user("contributor"), "task-003", { pullRequestUrl: "https://github.com/drift-monitor/api/pull/118", explanation: "This late submission should be rejected because the contract deadline has passed and the seeded task is expired.", idempotencyKey: "expired-test-key", evidence: [{ type: "pull_request", title: "PR", detail: "Late PR", href: "https://github.com/drift-monitor/api/pull/118" }] })).rejects.toMatchObject({ status: 409 });
-    await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "7pT9K3xLsimulatedwallet", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "b".repeat(64) })).rejects.toMatchObject({ status: 409 });
-    await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "7pT9K3xLsimulatedwallet", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "c".repeat(64) })).rejects.toMatchObject({ status: 409 });
+    await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "11111111111111111111111111111111", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "b".repeat(64) })).rejects.toMatchObject({ status: 409 });
+    await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "11111111111111111111111111111111", network: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "c".repeat(64) })).rejects.toMatchObject({ status: 409 });
   });
   it("unlocks an advanced task only from an active qualifying proof", async () => {
     await expect(checkEligibility(user("contributor"), "task-002")).resolves.toMatchObject({ eligible: true, requirement: { requiredCategory: "reliability" }, satisfiedBy: expect.any(Array) });

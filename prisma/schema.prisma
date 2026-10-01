@@ -238,6 +238,12 @@ model ProofReceipt {
   recipeVersion       Int?
   reviewerWallet      String?
   payoutSignature     String?
+  credentialNetwork   String     @default("demo")
+  credentialCommitment String?
+  credentialProgram   String?
+  issuanceSignature   String?
+  revocationSignature String?
+  credentialVersion   Int        @default(1)
   issuedAt            DateTime   @default(now())
   revokedAt           DateTime?
   expiresAt           DateTime?

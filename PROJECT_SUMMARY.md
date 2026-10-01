@@ -27,7 +27,13 @@ The product now supports two clearly separated application modes:
 
 The selected mode is persisted in browser local storage and can be changed from the workspace topbar or Settings. The workspace displays a persistent banner so simulated and real activity cannot be visually confused.
 
-The final Phase 2 checkpoint is `3b12ad9a`.
+### Phase 3: Portable credential commitment layer
+
+Proof receipts now carry explicit credential metadata: `demo` or `solana-devnet` network, a deterministic credential commitment hash, credential version, issuance signature when backed by a genuine Devnet payout, and revocation signature when a receipt is revoked. Demo Mode clearly identifies its application-level commitment ledger and does not claim that a Solana credential program is deployed. A real credential program can be configured through `SOLANA_CREDENTIAL_PROGRAM` after deployment and audit.
+
+Public verification now returns `valid`, current status, a revocation/expiration reason when applicable, and the privacy-safe credential commitment. The Proof Passport detail view displays the credential network, commitment, and program status.
+
+The latest implementation checkpoint is `8348742b`; the project summary checkpoint is maintained separately after documentation updates.
 
 ## 3. Frontend experience
 
@@ -125,6 +131,10 @@ The server uses:
 - Local Demo Mode reset service.
 
 The backend does not trust client-supplied organization identifiers. Service methods derive the organization from the controlled Demo Mode identity and apply authorization checks before mutations.
+
+### Credential infrastructure boundary
+
+`ProofReceipt` stores `credentialNetwork`, `credentialCommitment`, `credentialProgram`, `issuanceSignature`, `revocationSignature`, and `credentialVersion`. Issuance computes a SHA-256 commitment over the task, contributor, evidence content hash, recipe hash, and verification hash. Demo issuance stores no blockchain signature. Devnet issuance records the confirmed payout signature as the issuance signature and only reports a credential program when `SOLANA_CREDENTIAL_PROGRAM` is configured. This makes the blockchain boundary explicit instead of presenting simulated hashes as on-chain credentials.
 
 ## 6. Seeded Demo Mode data
 
