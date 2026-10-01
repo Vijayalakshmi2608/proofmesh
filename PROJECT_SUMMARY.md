@@ -2,7 +2,7 @@
 
 ## 1. Product overview
 
-ProofMesh is an outcome-bound work verification and settlement platform for Solana/Web3 teams. It gives sponsors and contributors a shared, explicit finish line: a sponsor defines a technical task and acceptance criteria, a contributor submits evidence, deterministic checks and a human reviewer verify the result, settlement is recorded, and ProofMesh issues a portable Proof-of-Work Receipt. Active receipts can later unlock eligibility for future tasks without exposing private evidence.
+ProofMesh is an outcome-bound work verification and settlement platform for Solana/Web3 teams. It gives sponsors and contributors a shared, explicit finish line: a sponsor defines a technical task and acceptance criteria, a contributor submits evidence, deterministic checks and a human reviewer verify the result, settlement is recorded, and ProofMesh issues a portable Proof-of-Work Receipt. Active receipts can later unlock eligibility for future tasks without exposing private evidence. The product promise is **Proof once. Unlock work everywhere.**
 
 The project is implemented as a polished dark startup-quality web application designed for hackathon judging and future production evolution. It uses React, TypeScript, Vite, Tailwind CSS, accessible component patterns, React Router, TanStack Query, Lucide icons, Recharts where useful, Express, Prisma, and SQLite for the local prototype backend.
 
@@ -170,6 +170,26 @@ Proof-to-Access makes Proof-of-Work Receipts useful beyond a single payment. A t
 
 The contributor-facing experience clearly explains why the user is eligible, which proof satisfied the requirement, whether the proof is active or revoked, and what remains private. Public verification does not expose private evidence.
 
+### Proof Recipes
+
+Sponsors can define strict reusable Proof Recipes while creating an Outcome Contract. Recipes support **ALL** logic, where every requirement must match, and **ANY** logic, where one qualifying requirement is sufficient. Each requirement can define a proof type, required status, minimum count, issuer, and human-readable label.
+
+The recipe is validated with Zod, included in canonical contract data, hashed with the contract, and persisted in `ProofRequirement.ruleJson`. The server evaluates the recipe against public proof metadata only. Legacy seeded rules are normalized into the same internal recipe structure so existing Demo Mode data remains compatible.
+
+### Proof Graph
+
+The Proof Graph visualizes how verified outcomes branch into reusable receipts and downstream work. It now includes:
+
+- An active Solana Integration branch.
+- An active Solana Program Development branch.
+- A revoked Reliability Engineering branch.
+- Active branch counts and revoked branch counts.
+- Blocked reuse-event metrics for revoked proofs.
+- ALL/ANY recipe evaluation context.
+- A downstream settlement node reachable only from active branches.
+
+Active branches use emerald styling and remain connected to eligible work. Revoked branches use red styling, muted status, blocked task labels, and a re-verification message. Revocation preserves audit history and prior reuse events, but it removes the proof from future access decisions and prevents the branch from reaching settlement. The graph never renders private repository contents, screenshots, personal documents, or sensitive contributor evidence.
+
 ## 8. Simulated AI-agent mode
 
 The AI-agent surface is explicitly labeled as a simulated prototype. It demonstrates governance constraints including:
@@ -211,7 +231,7 @@ The final validation included:
 
 - TypeScript check: passed.
 - Production Vite and Express build: passed.
-- Automated tests: **19 passed**.
+- Automated tests: **20 passed**.
 - Wallet state classification tests: passed.
 - Live Devnet RPC diagnostics test: passed.
 - Demo mode identity and deterministic transaction ID tests: passed.
@@ -262,4 +282,4 @@ This is a hackathon-quality prototype rather than a production financial platfor
 
 ## 14. Final checkpoint
 
-The verified Phase 2 project checkpoint is `3b12ad9a`. It includes the separated Demo/Devnet modes, real Phantom connectivity, mode-aware settlement surfaces, seeded Demo Mode, Proof-to-Access, Proof Passport, agent governance, documentation, and the completed validation pass.
+The latest verified project checkpoint is `8348742b`. It includes the separated Demo/Devnet modes, real Phantom connectivity, mode-aware settlement surfaces, seeded Demo Mode, Proof-to-Access, strict ALL/ANY Proof Recipes, Proof Passport, branch-aware Proof Graph with revocation effects, agent governance, documentation, and the completed validation pass.
