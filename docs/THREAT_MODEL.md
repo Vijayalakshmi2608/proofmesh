@@ -24,6 +24,19 @@ The local SQLite prototype has no row-level security (RLS) policies to audit. It
 | Financial state is changed without trace | `FinancialAudit` records action, entity, amount, status, and metadata | Audit log is local SQLite and not append-only under an adversarial database operator |
 | Malformed recipe or task input | Zod validation and canonical recipe hash | Fuzzing and property-based tests should be added before production |
 
+### Anchor protocol controls
+
+The Anchor program adds a second, independent enforcement boundary for future production settlement:
+
+- Credential issuance uses a deterministic PDA keyed by issuer, recipient, and proof commitment; duplicate issuance for the same tuple fails at account initialization.
+- Revocation requires the issuer signer and the credential PDA's `has_one` relationship; revoked credentials fail escrow claim validation.
+- Escrow funding derives a PDA from the task commitment and creates a token vault owned by that PDA, preventing arbitrary vault substitution.
+- Claim, approval, and release are monotonic state transitions with explicit guards against duplicate claims, duplicate approvals, release-before-approval, and release-after-release.
+- Recipient, reviewer, mint, token-account owner, and PDA seeds are validated by Anchor account constraints rather than trusted from browser input.
+- Events expose issuance, revocation, funding, claim, approval, and release transitions for reconciliation.
+
+The program source is not deployed or independently audited in this environment. Until `SOLANA_PROTOCOL_PROGRAM_ID` points to an executable verified Devnet deployment and the generated IDL is wired into the browser, the existing Real Devnet adapter is intentionally limited to a confirmed SPL-token transfer and does not claim protocol-level credential issuance or escrow enforcement.
+
 ## Incident recovery
 
 The product should enter a **paused** state when a payout provider, escrow program, proof registry, or verification provider is unavailable. In the current prototype, failed mutations surface an error toast and preserve the prior state. A production implementation must add an operator-controlled pause flag, replay-safe recovery jobs, alerting, and a documented reconciliation process.

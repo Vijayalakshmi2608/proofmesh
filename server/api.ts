@@ -15,6 +15,8 @@ import { checkEligibility, listUnlockedTasks, applyWithProof, revokeProof } from
 import { listAgentPolicies, requestAgentTask, decideAgentRequest } from "./services/agentService";
 import { realMetrics } from "./services/metricsService";
 import { resetDemo } from "./services/demoService";
+import { getSolanaProtocolStatus } from "./services/solanaProtocolService";
+import { getReputationGraph, getReputationHistory, listOpportunities } from "./services/reputationService";
 
 export const apiRouter = Router();
 apiRouter.use((req, _res, next) => { req.demoUser = getDemoUser(req); next(); });
@@ -22,10 +24,14 @@ apiRouter.use((req, _res, next) => { req.demoUser = getDemoUser(req); next(); })
 function handler(fn: (req: Request, res: Response) => Promise<unknown>) { return (req: Request, res: Response) => fn(req, res).then((data) => res.json({ data })).catch((error: unknown) => { const status = typeof error === "object" && error && "status" in error && typeof error.status === "number" ? error.status : error instanceof z.ZodError ? 400 : 500; const message = error instanceof Error ? error.message : "Unexpected server error"; res.status(status).json({ error: { code: status === 400 ? "VALIDATION_ERROR" : status === 403 ? "FORBIDDEN" : status === 404 ? "NOT_FOUND" : "SERVER_ERROR", message } }); }); }
 
 apiRouter.get("/health", (_req, res) => res.json({ data: { ok: true, service: "proofmesh-api", network: "devnet", simulatedBlockchain: true } }));
+apiRouter.get("/solana/protocol-status", handler(() => getSolanaProtocolStatus()));
 apiRouter.get("/demo/session", (req, res) => res.json({ data: { user: req.demoUser, availableRoles: Object.values(demoUsers) } }));
 apiRouter.get("/organizations", handler((req) => listOrganizations(req.demoUser)));
 apiRouter.get("/tasks", handler((req) => listTasks(req.demoUser)));
 apiRouter.get("/tasks/unlocked", handler((req) => listUnlockedTasks(req.demoUser)));
+apiRouter.get("/opportunities", handler((req) => listOpportunities(req.demoUser)));
+apiRouter.get("/reputation/graph", handler((req) => getReputationGraph(req.demoUser, typeof req.query.contributor === "string" ? req.query.contributor : undefined)));
+apiRouter.get("/reputation/history", handler((req) => getReputationHistory(req.demoUser)));
 apiRouter.post("/tasks", handler((req) => createTask(req.demoUser, req.body)));
 apiRouter.post("/contracts/generate-recipe", handler((req) => generateRecipe(z.string().min(20).parse(req.body.prompt))));
 apiRouter.post("/contracts/validate-recipe", handler(async (req) => validateRecipe(req.body.recipe)));

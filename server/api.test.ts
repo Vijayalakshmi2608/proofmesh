@@ -11,6 +11,8 @@ import { releasePayout, submitEvidence } from "./services/workflowService";
 import { checkEligibility, listUnlockedTasks } from "./services/accessService";
 import { listAgentPolicies, requestAgentTask } from "./services/agentService";
 import { realMetrics } from "./services/metricsService";
+import { getSolanaProtocolStatus } from "./services/solanaProtocolService";
+import { getReputationGraph, getReputationHistory, listOpportunities } from "./services/reputationService";
 
 const requestFor = (role: string) => ({ header: () => role }) as never;
 const user = (role: string) => getDemoUser(requestFor(role));
@@ -79,5 +81,28 @@ describe("ProofMesh Demo Mode API services", () => {
   });
   it("reports real SQLite metrics instead of placeholder dashboard numbers", async () => {
     await expect(realMetrics(user("sponsor"))).resolves.toMatchObject({ source: "sqlite", activeTasks: expect.any(Number), verifiedProofs: expect.any(Number), totalDevnetSettlement: expect.any(Number), proofReuseCount: expect.any(Number) });
+  });
+  it("does not claim an Anchor deployment when no executable program is configured", async () => {
+    const previous = process.env.SOLANA_PROTOCOL_PROGRAM_ID;
+    delete process.env.SOLANA_PROTOCOL_PROGRAM_ID;
+    await expect(getSolanaProtocolStatus()).resolves.toMatchObject({ configured: false, deployed: false, mode: "unconfigured", network: "devnet" });
+    if (previous) process.env.SOLANA_PROTOCOL_PROGRAM_ID = previous;
+  });
+  it("rejects malformed recipient wallets before a Devnet payout can be recorded", async () => {
+    await expect(releasePayout(user("reviewer"), "sub-002", { payoutSignature: "5wK2rP91simulatedsignature", recipientWallet: "not-a-solana-wallet-address-123", network: "devnet", settlementMode: "devnet", tokenMint: "DevnetTestTokenMint111111111111111111111111111", amount: 950, recipeHash: "c".repeat(64) })).rejects.toMatchObject({ status: 400 });
+  });
+  it("builds a functional reputation graph from persisted work, proof, issuer, and access records", async () => {
+    const graph = await getReputationGraph(user("contributor"));
+    expect(graph.generatedFrom).toBe("sqlite");
+    expect(graph.nodes).toEqual(expect.arrayContaining([expect.objectContaining({ type: "proof" }), expect.objectContaining({ type: "work" }), expect.objectContaining({ type: "opportunity" })]));
+    expect(graph.edges).toEqual(expect.arrayContaining([expect.objectContaining({ relation: "verified_as" }), expect.objectContaining({ relation: "issued_by" })]));
+  });
+  it("returns explainable opportunity matches and excludes revoked credentials", async () => {
+    const opportunities = await listOpportunities(user("contributor"));
+    expect(opportunities).toEqual(expect.arrayContaining([expect.objectContaining({ matchStatus: "qualified", supportingProofs: expect.any(Array) })]));
+    const revokedGraph = await getReputationGraph(user("contributor"), "demo-contributor-4");
+    expect(revokedGraph.nodes).toEqual(expect.arrayContaining([expect.objectContaining({ type: "proof", status: "revoked" })]));
+    expect(revokedGraph.edges).toEqual(expect.arrayContaining([expect.objectContaining({ status: "revoked" })]));
+    await expect(getReputationHistory(user("contributor"))).resolves.toMatchObject({ activeCredentials: expect.any(Number), revokedCredentials: expect.any(Number), completedWork: expect.any(Array) });
   });
 });

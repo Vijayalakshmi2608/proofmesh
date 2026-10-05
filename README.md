@@ -59,6 +59,28 @@ For the two-to-three-minute walkthrough, choose **Demo Mode**, open the active t
 
 The wallet connection and balance read use the real Phantom adapter and Solana Devnet RPC. Real Devnet mode requires Phantom and never fakes a connected wallet or balance. Phantom does not expose its active network through the current adapter API in every browser; when that signal is unavailable, the UI explicitly shows **Devnet target · wallet network unverified** and instructs you to switch Phantom manually rather than silently treating it as Devnet. Demo Mode remains available as the no-wallet path.
 
+## Anchor protocol infrastructure
+
+The repository now includes an Anchor workspace under `programs/proofmesh_protocol`. The program is structured around two PDA families:
+
+- `credential` PDA: `issuer + recipient + proof_hash`, with issuer-only revocation, explicit active/revoked status, fixed-size proof/category commitments, and expiry validation.
+- `escrow` PDA: `task_hash`, with a program-owned token vault. Funding records the sponsor, reviewer, recipient, mint, amount, and task commitment. Claim requires the recipient and an active credential; approval requires the configured reviewer; release requires claimed + approved state and uses PDA signer seeds for the vault transfer.
+
+The Rust code includes strict Anchor constraints (`seeds`, `bump`, `has_one`, `address`, token mint/authority constraints), duplicate-state guards, replay-safe one-way transitions, events, custom errors, and unit tests for fixed commitment sizes and invalid-state primitives.
+
+The current hosted prototype does **not** claim that this program is deployed. Set `SOLANA_PROTOCOL_PROGRAM_ID` only after deploying the program to Devnet and verifying that the address is executable. The API endpoint `/api/solana/protocol-status` checks that state against Devnet RPC. Until then, Real Devnet Mode uses the existing real SPL-token transfer adapter and labels it **legacy settlement infrastructure**, not credential-gated on-chain escrow. Demo Mode remains fully isolated and never calls Solana.
+
+To build and test the program in an Anchor-enabled environment:
+
+```bash
+anchor build
+anchor test --provider.cluster localnet
+# after deployment and wallet funding:
+anchor test --provider.cluster devnet
+```
+
+The generated Anchor IDL and deployed program address are intentionally not committed as if they were real. This prevents fabricated transaction claims and keeps the browser state tied to verified RPC/program state.
+
 ## Tests and build
 
 ```bash
@@ -75,7 +97,7 @@ All workflow services perform server-side authorization and Zod input validation
 
 ## Known limitations
 
-This hackathon prototype uses Demo Mode identities and a local SQLite database. GitHub and deployment checks are deterministic simulations around submitted metadata rather than live provider attestations. OpenRouter recipe generation is optional and disabled unless a server-side connector is configured. Agent execution is simulated; it does not autonomously execute code, approve work, alter contracts, or move funds. Proof revocation is modeled locally and does not yet propagate to external credential registries. See [ARCHITECTURE.md](ARCHITECTURE.md), [DEMO.md](DEMO.md), [LIMITATIONS.md](LIMITATIONS.md), and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
+This hackathon prototype uses Demo Mode identities and a local SQLite database. GitHub and deployment checks are deterministic simulations around submitted metadata rather than live provider attestations. OpenRouter recipe generation is optional and disabled unless a server-side connector is configured. Agent execution is simulated; it does not autonomously execute code, approve work, alter contracts, or move funds. The Anchor protocol source is production-structured but not deployed or audited in this environment; the browser therefore does not claim on-chain credential issuance or credential-gated escrow. The existing Real Devnet SPL transfer is real when Phantom signs and RPC confirms it, but remains a legacy settlement adapter until the Anchor IDL/program is configured. See [ARCHITECTURE.md](ARCHITECTURE.md), [DEMO.md](DEMO.md), [LIMITATIONS.md](LIMITATIONS.md), and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ## Regulatory disclaimer
 
