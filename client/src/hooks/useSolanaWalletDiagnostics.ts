@@ -25,6 +25,12 @@ export function walletErrorMessage(error: WalletError | null): string | null {
   return error.message || "Wallet connection failed. Try again.";
 }
 
+function asWalletError(value: unknown): WalletError {
+  if (value instanceof Error) return value as WalletError;
+  const message = typeof value === "object" && value !== null && "message" in value && typeof value.message === "string" ? value.message : "Wallet connection failed. Try again.";
+  return Object.assign(new Error(message), { name: "WalletConnectionError" }) as WalletError;
+}
+
 export function deriveWalletDiagnosticStatus(input: { connecting: boolean; connected: boolean; adapterError: string | null; walletInstalled: boolean | undefined; networkStatus: WalletNetworkStatus; rpcHealthy: boolean | null }): WalletDiagnosticStatus {
   if (input.connecting) return "connecting";
   if (input.adapterError && !input.connected) return input.adapterError.includes("rejected") ? "connection_rejected" : input.walletInstalled === false ? "wallet_unavailable" : "connection_rejected";
@@ -87,6 +93,13 @@ export function useSolanaWalletDiagnostics() {
     adapter.on("error", handleError);
     return () => { adapter.off("error", handleError); };
   }, [wallet]);
+  useEffect(() => {
+    const handleProviderError = (event: Event) => {
+      setWalletError(asWalletError((event as CustomEvent<unknown>).detail));
+    };
+    window.addEventListener("proofmesh:wallet-error", handleProviderError);
+    return () => window.removeEventListener("proofmesh:wallet-error", handleProviderError);
+  }, []);
 
   const status = deriveWalletDiagnosticStatus({ connecting, connected, adapterError, walletInstalled, networkStatus, rpcHealthy });
   const displayNetwork = networkStatus === "devnet" ? "Solana Devnet" : networkStatus === "wrong_network" ? "Wrong network" : "Devnet target · wallet network unverified";

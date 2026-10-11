@@ -11,5 +11,13 @@ export const SOLANA_RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL?.trim() || clu
 
 export function SolanaProvider({ children }: { children: ReactNode }) {
   const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
-  return <ConnectionProvider endpoint={SOLANA_RPC_URL}><WalletProvider wallets={wallets} autoConnect><WalletModalProvider>{children}</WalletModalProvider></WalletProvider></ConnectionProvider>;
+  const handleWalletError = (error: Error) => {
+    const message = error?.message?.toLowerCase?.() ?? "";
+    if (message.includes("reject") || message.includes("cancel") || message.includes("declin")) {
+      // A rejected auto-connect must not keep retrying on every render or page load.
+      window.localStorage.removeItem("walletName");
+    }
+    window.dispatchEvent(new CustomEvent("proofmesh:wallet-error", { detail: error }));
+  };
+  return <ConnectionProvider endpoint={SOLANA_RPC_URL}><WalletProvider wallets={wallets} autoConnect onError={handleWalletError}><WalletModalProvider>{children}</WalletModalProvider></WalletProvider></ConnectionProvider>;
 }

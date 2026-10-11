@@ -25,6 +25,8 @@ describe("Solana wallet diagnostics", () => {
     expect(deriveWalletDiagnosticStatus({ ...base, connected: true, rpcHealthy: false })).toBe("rpc_unavailable");
     expect(deriveWalletDiagnosticStatus({ ...base, connected: true, rpcHealthy: true })).toBe("connected");
     expect(walletErrorMessage(new Error("User rejected the request") as never)).toContain("rejected");
+    expect(walletErrorMessage({ message: "User rejected the request" } as never)).toContain("rejected");
+    expect(walletErrorMessage({} as never)).toContain("failed");
   });
 
   it("reaches the configured Solana Devnet RPC with a lightweight request", async () => {
