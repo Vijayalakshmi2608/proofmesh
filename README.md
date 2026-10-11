@@ -91,13 +91,17 @@ pnpm build
 
 The test suite covers policy and recipe validation, public proof visibility, task lifecycle constraints, Proof-to-Access eligibility, agent allowlists and approval thresholds, payout safety, metrics, API validation, wallet state classification, and a lightweight live Devnet RPC request. Browser smoke testing should cover `/`, `/dashboard`, `/tasks`, `/tasks/new`, `/tasks/task-001`, `/submissions/sub-001`, `/proofs`, `/proofs/proof-001`, `/verify/proof-001`, `/verify/proof/proof-001`, `/access`, `/agents`, `/graph`, `/demo`, and `/settings`.
 
+## Render deployment
+
+The recommended deployment is a single Node.js Web Service that serves the React SPA and Express API together. See [docs/RENDER_DEPLOYMENT.md](docs/RENDER_DEPLOYMENT.md) and the checked-in [render.yaml](render.yaml) for the exact commands, health check, environment variables, and SQLite persistent-disk boundary. The Render connector is not enabled in this session, so no live Render deployment is claimed.
+
 ## Security posture
 
 All workflow services perform server-side authorization and Zod input validation. Financial state transitions are idempotency-aware and recorded in `FinancialAudit`. Public proof verification exposes receipt commitments and status only; it does not expose private evidence. Proof-to-Access checks use active public receipt metadata, chain, category, and verification commitments. Agent requests are constrained by server-side category, recipient, budget, and approval policies. See [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) for the threat model and open risks.
 
 ## Known limitations
 
-This hackathon prototype uses Demo Mode identities and a local SQLite database. GitHub and deployment checks are deterministic simulations around submitted metadata rather than live provider attestations. OpenRouter recipe generation is optional and disabled unless a server-side connector is configured. Agent execution is simulated; it does not autonomously execute code, approve work, alter contracts, or move funds. The Anchor protocol source is production-structured but not deployed or audited in this environment; the browser therefore does not claim on-chain credential issuance or credential-gated escrow. The existing Real Devnet SPL transfer is real when Phantom signs and RPC confirms it, but remains a legacy settlement adapter until the Anchor IDL/program is configured. See [ARCHITECTURE.md](ARCHITECTURE.md), [DEMO.md](DEMO.md), [LIMITATIONS.md](LIMITATIONS.md), and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
+This hackathon prototype uses Demo Mode identities and a local SQLite database. GitHub and deployment checks are deterministic simulations around submitted metadata rather than live provider attestations. OpenRouter recipe generation is optional and disabled unless a server-side connector is configured. Agent execution is simulated; it does not autonomously execute code, approve work, alter contracts, or move funds. The Anchor protocol source is production-structured but not deployed or audited in this environment; the browser therefore does not claim on-chain credential issuance or credential-gated escrow. The existing Real Devnet SPL transfer is real when Phantom signs and RPC confirms it, but remains a legacy settlement adapter until the Anchor IDL/program is configured. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md), [docs/LIMITATIONS.md](docs/LIMITATIONS.md), and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ## Regulatory disclaimer
 

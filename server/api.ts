@@ -23,7 +23,14 @@ apiRouter.use((req, _res, next) => { req.demoUser = getDemoUser(req); next(); })
 
 function handler(fn: (req: Request, res: Response) => Promise<unknown>) { return (req: Request, res: Response) => fn(req, res).then((data) => res.json({ data })).catch((error: unknown) => { const status = typeof error === "object" && error && "status" in error && typeof error.status === "number" ? error.status : error instanceof z.ZodError ? 400 : 500; const message = error instanceof Error ? error.message : "Unexpected server error"; res.status(status).json({ error: { code: status === 400 ? "VALIDATION_ERROR" : status === 403 ? "FORBIDDEN" : status === 404 ? "NOT_FOUND" : "SERVER_ERROR", message } }); }); }
 
-apiRouter.get("/health", (_req, res) => res.json({ data: { ok: true, service: "proofmesh-api", network: "devnet", simulatedBlockchain: true } }));
+apiRouter.get("/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ data: { ok: true, service: "proofmesh-api", network: "devnet", simulatedBlockchain: true, database: "ready" } });
+  } catch {
+    res.status(503).json({ error: { code: "DATABASE_UNAVAILABLE", message: "Database is not ready" } });
+  }
+});
 apiRouter.get("/solana/protocol-status", handler(() => getSolanaProtocolStatus()));
 apiRouter.get("/demo/session", (req, res) => res.json({ data: { user: req.demoUser, availableRoles: Object.values(demoUsers) } }));
 apiRouter.get("/organizations", handler((req) => listOrganizations(req.demoUser)));
@@ -64,6 +71,7 @@ apiRouter.get("/agent/policies", handler((req) => listAgentPolicies(req.demoUser
 apiRouter.post("/agent/requests", handler((req) => requestAgentTask(req.demoUser, req.body)));
 apiRouter.post("/agent/requests/:id/decision", handler((req) => decideAgentRequest(req.demoUser, req.params.id, req.body)));
 apiRouter.post("/demo/reset", handler((req) => resetDemo(req.demoUser)));
+apiRouter.use((_req, res) => res.status(404).json({ error: { code: "NOT_FOUND", message: "API route not found" } }));
 
 export async function closeApi() { await prisma.$disconnect(); }
 
