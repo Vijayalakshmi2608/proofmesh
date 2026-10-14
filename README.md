@@ -330,12 +330,3 @@ The persistent-disk SQLite configuration requires a paid Render instance. Follow
 
 Potential integrations include DAO contributor programs, bounty marketplaces, code-hosting/CI providers, security attestations, credential issuers, and applications that want proof-gated access to work or grants.
 
-## Limitations
-
-ProofMesh is a hackathon prototype. Demo Mode identities and receipts are simulated. GitHub and deployment checks are deterministic simulations around submitted metadata unless a live provider connector is configured. The AI-agent surface cannot execute code, approve its own work, alter Outcome Contracts, or move funds autonomously. The Anchor protocol is not deployed or audited in this environment. SQLite on a persistent disk is single-instance infrastructure; use managed Postgres for a scalable production deployment.
-
-ProofMesh is not financial, legal, employment, tax, investment, or regulatory advice. Devnet balances and simulated receipts have no monetary value. A production launch requires jurisdiction-specific review, custody and money-transmission analysis, sanctions screening, privacy review, and an independent smart-contract security assessment. See [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
-
-## License and contribution direction
-
-The repository currently carries an MIT package declaration but should add a root `LICENSE` file, contributor guide, security disclosure process, and dependency policy before a broad open-source release. Contributions should preserve the Demo Mode/Real Devnet separation and never introduce fabricated transaction claims.
