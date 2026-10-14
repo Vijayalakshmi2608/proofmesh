@@ -1,14 +1,188 @@
 # ProofMesh
 
-ProofMesh is an outcome-bound work verification and settlement platform for Solana/Web3 teams. A sponsor defines an exact Outcome Contract, a contributor submits evidence, deterministic checks and a human reviewer verify the result, and a Proof-of-Work Receipt records the accepted outcome. A receipt can later unlock eligibility for another task without exposing private evidence.
+<p align="center">
+  <strong>Proof once. Build reputation everywhere.</strong><br />
+  Outcome-bound work verification, portable Proof-of-Work Receipts, and proof-gated opportunities for Solana teams.
+</p>
 
-## Product surfaces
+<p align="center">
+  <a href="https://proofmesh-9t5fuy66.manus.space">Open hosted preview</a> ·
+  <a href="docs/DEMO_SCRIPT.md">3-minute demo</a> ·
+  <a href="docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="docs/THREAT_MODEL.md">Threat model</a> ·
+  <a href="docs/INTEGRATION.md">Integration API</a>
+</p>
 
-The public landing page explains the workflow, architecture, benefits, Devnet-only status, and pilot path. The workspace includes task creation, contributor submission, reviewer decisions, public proof verification, Proof-to-Access eligibility, and a simulated AI-agent governance surface. Sponsors can author reusable Proof Recipes with strict **ALL** or **ANY** logic. Each recipe is hashed with the Outcome Contract, persisted server-side, and evaluated against active public receipt metadata only.
+<p align="center">
+  <img alt="React" src="https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Solana" src="https://img.shields.io/badge/Solana-Devnet-9945FF?logo=solana&logoColor=white" />
+  <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white" />
+  <img alt="Tests" src="https://img.shields.io/badge/tests-24%20passing-22C55E" />
+</p>
 
-Proof receipts now expose an explicit credential commitment layer: network (`demo` or `solana-devnet`), commitment hash, credential version, issuance signature when a real Devnet payout exists, and revocation signature when a receipt is revoked. Demo Mode labels this as an application-level commitment ledger; it does not claim that a Solana credential program has been deployed. Real Devnet credential-program support is integration-ready through `SOLANA_CREDENTIAL_PROGRAM` but remains opt-in and unclaimed until an audited program address is configured.
+> **Judge quickstart:** open the hosted preview, choose **Try the Demo**, stay in Demo Mode, and follow the path **task → evidence → checks → reviewer approval → receipt → Proof-to-Access**. No wallet or Devnet SOL is required for the simulated walkthrough.
+
+## Contents
+
+- [What ProofMesh does](#what-proofmesh-does)
+- [Judge quickstart](#judge-quickstart)
+- [Core workflow](#core-workflow)
+- [Implemented features](#implemented-features)
+- [Architecture](#architecture)
+- [Repository map](#repository-map)
+- [Local setup](#local-setup)
+- [API overview](#api-overview)
+- [Real Devnet and Anchor boundary](#real-devnet-and-anchor-boundary)
+- [Security and privacy](#security-and-privacy)
+- [Testing](#testing)
+- [Render deployment](#render-deployment)
+- [Evaluation guide](#evaluation-guide)
+- [Roadmap and business potential](#roadmap-and-business-potential)
+- [Limitations](#limitations)
+
+## What ProofMesh does
+
+Web3 teams often verify work in disconnected tools: a task description in one place, evidence in another, reviewer decisions in chat, and payment records somewhere else. ProofMesh creates one outcome-bound finish line:
+
+1. A sponsor defines an **Outcome Contract** with measurable acceptance criteria.
+2. A contributor submits evidence without exposing private material by default.
+3. Deterministic checks and a human reviewer validate the result.
+4. A portable **Proof-of-Work Receipt** records the accepted capability.
+5. Active receipts can satisfy future **Proof Recipes** and unlock new opportunities.
+6. A reputation graph connects completed work, proofs, issuers, and opportunities.
+7. Settlement is either clearly simulated in Demo Mode or explicitly signed and confirmed on Solana Devnet.
+
+The product concept is **reusable proof**, not an arbitrary profile score: reputation is derived from verified completed work and its receipt history.
+
+## Judge quickstart
+
+### Recommended 3-minute path
+
+1. Open the [hosted preview](https://proofmesh-9t5fuy66.manus.space).
+2. Select **Try the Demo**. The landing page intentionally separates this from **Connect Solana Devnet**.
+3. In the workspace, open the active task and inspect its acceptance criteria and proof requirement.
+4. Use the contributor role to submit evidence, then switch to the reviewer role.
+5. Run deterministic checks, review the evidence summary, approve the submission, and inspect the simulated settlement panel.
+6. Open **Proofs** to see the Proof Passport, including active and revoked receipts.
+7. Open **Proof-to-Access** or **Graph** to see why an opportunity is qualified, which proof supports it, what is missing, and how revocation affects downstream access.
+8. Use **Settings → Demo Mode → Reset Demo** to restore deterministic fixtures.
+
+Full narration is in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md). Demo transactions are labeled **DEMO — Simulated Transaction** and never call Solana.
+
+> **Missing media:** no demo video, pitch video, or transaction-specific Explorer link is committed because none has been verified. Add those URLs only after the assets actually exist.
+
+## Core workflow
+
+```mermaid
+flowchart LR
+  A[Task + Outcome Contract] --> B[Evidence Submission]
+  B --> C[Deterministic Checks]
+  C --> D[Human Review]
+  D --> E[Proof-of-Work Receipt]
+  E --> F[Reputation Graph]
+  F --> G[Proof-gated Opportunity]
+  G --> H[Settlement]
+```
+
+The trust model is deliberately bounded: a receipt proves that ProofMesh recorded a verification decision and its supporting commitments. It does not independently prove that submitted evidence is truthful in the physical world.
+
+## Implemented features
+
+| Surface                 | What is implemented                                                                                                                                               | Where to inspect                                                                                                                                                                           | Truth boundary                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Outcome Contracts       | Versioned acceptance criteria, evidence requirements, automated checks, reviewer checks, policy hash, and recipe provenance.                                      | [`server/services/recipeService.ts`](server/services/recipeService.ts), [`server/services/workflowService.ts`](server/services/workflowService.ts)                                         | Server-validated prototype logic.                                                             |
+| ALL / ANY Proof Recipes | Sponsors can define compound proof requirements. `ALL` requires every condition; `ANY` requires one qualifying condition.                                         | [`client/src/pages/Tasks.tsx`](client/src/pages/Tasks.tsx), [`server/services/accessService.ts`](server/services/accessService.ts)                                                         | Evaluates persisted active public receipt metadata.                                           |
+| Evidence and review     | Contributors submit evidence; reviewers run deterministic checks, request changes, approve, or reject.                                                            | [`client/src/pages/SubmissionDetail.tsx`](client/src/pages/SubmissionDetail.tsx), [`server/services/verificationService.ts`](server/services/verificationService.ts)                       | GitHub/deployment checks are deterministic simulations unless a live provider is configured.  |
+| Proof Passport          | Active and revoked receipts, credential commitments, reuse counts, public verification, and completed-work history.                                               | [`client/src/pages/Proofs.tsx`](client/src/pages/Proofs.tsx), [`server/services/proofService.ts`](server/services/proofService.ts)                                                         | Demo commitments are application-level; they are not claims of deployed on-chain credentials. |
+| Proof-to-Access         | Eligibility explanations show supporting proofs, missing requirements, active/revoked status, and privacy-safe disclosure boundaries.                             | [`client/src/pages/ProofAccess.tsx`](client/src/pages/ProofAccess.tsx), [`server/services/accessService.ts`](server/services/accessService.ts)                                             | Revoked and expired credentials are excluded from qualification.                              |
+| ProofGraph              | API-backed graph relationships connect contributors, work, proofs, issuers, and opportunities; revoked branches show downstream impact.                           | [`client/src/pages/ProofGraph.tsx`](client/src/pages/ProofGraph.tsx), [`server/services/reputationService.ts`](server/services/reputationService.ts)                                       | Derived from persisted SQLite records, not decorative fixtures.                               |
+| Opportunity Engine      | Explainable matches include qualification status, supporting proofs, missing proofs, and revocation/expiry exclusions.                                            | [`server/services/reputationService.ts`](server/services/reputationService.ts), `/api/opportunities`                                                                                       | Prototype matching rules are deterministic and inspectable.                                   |
+| Wallet and Devnet       | Phantom adapter, Devnet RPC health, live balance, explicit connect/reject/wrong-network states, transaction confirmation, and Explorer links for real signatures. | [`client/src/contexts/SolanaProvider.tsx`](client/src/contexts/SolanaProvider.tsx), [`client/src/components/DevnetTransactionPanel.tsx`](client/src/components/DevnetTransactionPanel.tsx) | Real mode never silently falls back to simulation.                                            |
+| Agent governance        | Simulated agent requests with category, recipient, budget, allowlist, threshold approval, and no self-approval.                                                   | [`client/src/pages/AgentDemo.tsx`](client/src/pages/AgentDemo.tsx), [`server/services/agentService.ts`](server/services/agentService.ts)                                                   | Agent execution is simulated; it cannot approve work or move funds autonomously.              |
+| Audit and metrics       | Financial audit events, real SQLite-derived dashboard metrics, activity timeline, and deterministic demo reset.                                                   | [`server/services/metricsService.ts`](server/services/metricsService.ts), [`server/api.ts`](server/api.ts)                                                                                 | Metrics are database-derived in the running instance.                                         |
+
+## Architecture
+
+### Application architecture
+
+```mermaid
+flowchart TB
+  U[Contributor / Sponsor / Reviewer]
+  U --> FE[React 19 + TypeScript + Vite]
+  FE --> API[Express REST API]
+  API --> AUTH[Demo role + server authorization]
+  API --> ZOD[Zod validation]
+  API --> DB[Prisma ORM]
+  DB --> SQLITE[(SQLite demo database)]
+  FE --> WALLET[Phantom wallet adapter]
+  WALLET --> RPC[Solana Devnet RPC]
+  API --> PROTOCOL[Optional Anchor protocol status]
+  API --> AUDIT[FinancialAudit + activity records]
+```
+
+### Data and trust flow
+
+```mermaid
+flowchart LR
+  E[Evidence] -->|private by default| DB[(Off-chain database)]
+  DB --> CHECK[Deterministic checks + human review]
+  CHECK --> R[Receipt commitment + status]
+  R -->|public-safe metadata only| VERIFY[Public verification]
+  R --> GRAPH[Reputation / opportunity graph]
+  REV[Issuer revocation or expiry] --> R
+  REV --> GRAPH
+  RPC[Solana Devnet RPC] -. real signed settlement only .-> SETTLE[Settlement record]
+```
+
+### Deployment architecture
+
+```mermaid
+flowchart TB
+  Browser[Browser] --> Render[Render Node Web Service]
+  Render --> SPA[Express serves compiled React SPA]
+  Render --> API[Express /api routes]
+  API --> Disk[(Paid persistent disk\nSQLite database)]
+  Browser -->|optional real wallet signing| Phantom[Phantom]
+  Phantom --> Devnet[Solana Devnet RPC]
+```
+
+The checked-in [`render.yaml`](render.yaml) describes this single-service deployment. Render Free services cannot preserve SQLite files; the current Blueprint therefore uses a paid persistent disk. For horizontal scaling, migrate Prisma to managed Postgres.
+
+## Repository map
+
+```text
+client/src/
+  components/       Shared UI, wallet, transaction, status, and shell components
+  contexts/         Demo mode, role, theme, and Solana provider state
+  hooks/             API, wallet diagnostics, and query hooks
+  pages/             Landing, dashboard, tasks, submissions, proofs, access, graph
+server/
+  api.ts            REST route registration and API error boundary
+  services/         Authorization, recipes, verification, proofs, access, reputation
+prisma/
+  schema.prisma     Task, contract, submission, proof, escrow, audit, and graph data
+  seed.ts           Deterministic Demo Mode fixtures
+programs/
+  proofmesh_protocol/  Production-structured Anchor credential/escrow source
+scripts/
+  ensure-demo-data.ts  Guarded one-time empty-database initializer
+docs/
+  ARCHITECTURE.md, DEMO_SCRIPT.md, INTEGRATION.md, RENDER_DEPLOYMENT.md
+  THREAT_MODEL.md, LIMITATIONS.md
+```
 
 ## Local setup
+
+### Prerequisites
+
+- Node.js 22+
+- pnpm
+- SQLite for local Demo Mode
+- Phantom only for Real Devnet Mode
+- Rust and Anchor only if compiling the optional protocol workspace
+
+### Install and seed
 
 ```bash
 pnpm install
@@ -18,70 +192,91 @@ pnpm db:push
 pnpm db:seed
 ```
 
-The local SQLite database is created from `DATABASE_URL`. Demo seed data includes five tasks, four named contributors, six proof receipts (including active and revoked states), multiple submissions, ten activity events, Proof-to-Access rules, an agent policy, an agent request, and financial audit events.
+The seed is intentionally destructive for local Demo Mode: it resets the local fixture database. Do not run `pnpm db:seed` against a database containing real user data.
 
-## Run the app
+### Run and build
 
 ```bash
 pnpm dev
+pnpm check
+pnpm test
+pnpm build
 ```
 
-The managed development server serves the React frontend and REST API. The API is available under `/api`.
-
-For a production-like local run:
+For a production-like local process:
 
 ```bash
-pnpm build
 DATABASE_URL="file:./dev.db" NODE_ENV=production node dist/index.js
 ```
 
-## Two explicit application modes
+### Environment configuration
 
-ProofMesh starts in **Demo Mode** so a judge can explore the complete workflow without Phantom, Devnet SOL, or configuration. Demo Mode uses stable sponsor, contributor, reviewer, and public-verifier identities, seeded Task A/Task B records, and server-validated role permissions. Browser-supplied organization IDs are never trusted.
+The repository does not commit a secret-bearing `.env` file. Common variables are:
 
-The mode switch is available in the workspace topbar and under **Settings → Demo Mode**:
+| Variable                     | Use                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`               | Prisma SQLite URL locally or on the Render persistent disk.                                  |
+| `VITE_SOLANA_RPC_URL`        | Optional public Solana Devnet RPC override.                                                  |
+| `CORS_ORIGIN`                | Exact comma-separated origins for split-origin clients; leave unset for same-origin hosting. |
+| `SEED_DEMO_DATA`             | Render demo only: seed an empty database once when `true`; never resets non-empty data.      |
+| `SOLANA_PROTOCOL_PROGRAM_ID` | Only after an Anchor program is deployed and verified executable on Devnet.                  |
+| `SOLANA_CREDENTIAL_PROGRAM`  | Optional server-side credential program configuration.                                       |
+| `GITHUB_TOKEN`               | Optional server-side GitHub API access; never expose it as `VITE_*`.                         |
 
-| Mode            | Wallet requirement                 | Financial behavior                                                                                                                                            |
-| --------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Demo Mode**   | None                               | Uses isolated records and deterministic IDs such as `demo-tx-task-002-fund`. Every action is labeled **DEMO — Simulated Transaction** and never calls Solana. |
-| **Real Devnet** | Phantom connected to Solana Devnet | Requires the real wallet, Devnet RPC, and explicit wallet confirmation. It never silently falls back to simulation.                                           |
+## API overview
 
-For the two-to-three-minute walkthrough, choose **Demo Mode**, open the active task, accept it, submit evidence, switch the demo role to Reviewer, run checks, approve, and use the simulated payout panel to view the receipt. Use **Settings → Demo Mode → Reset Demo** to restore the deterministic dataset; reset does not move funds or touch external Devnet data.
+All API responses use `{ data: ... }` on success and `{ error: { code, message } }` on failure. Demo role selection uses the `x-demo-role` header; organization identity is resolved server-side and is never trusted from the browser.
 
-## Real Phantom wallet and Devnet instructions
+| Area                | Representative endpoints                                                                                                                        |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Health and protocol | `GET /api/health`, `GET /api/solana/protocol-status`                                                                                            |
+| Tasks and contracts | `GET /api/tasks`, `POST /api/tasks`, `GET /api/tasks/:id/contract`, `POST /api/contracts`                                                       |
+| Eligibility         | `GET /api/tasks/unlocked`, `GET /api/tasks/:id/eligibility`, `POST /api/tasks/:id/apply`, `GET /api/opportunities`                              |
+| Submissions         | `GET /api/submissions`, `POST /api/submissions/:id/evidence-submit`, `POST /api/submissions/:id/run-checks`, `POST /api/submissions/:id/review` |
+| Proofs              | `GET /api/proofs`, `GET /api/proofs/:id`, `POST /api/proofs/:id/revoke`, `GET /api/verify/:id`                                                  |
+| Reputation          | `GET /api/reputation/graph`, `GET /api/reputation/history`                                                                                      |
+| Metrics and demo    | `GET /api/dashboard/metrics`, `GET /api/metrics/real`, `POST /api/demo/reset`                                                                   |
 
-1. Install [Phantom](https://phantom.app/download) for your browser.
-2. In Phantom, open the network selector and switch the active network to **Devnet**.
-3. Start ProofMesh locally with `pnpm dev`, open **Settings → Wallets**, and choose **Connect Phantom**.
-4. Confirm that the diagnostics panel shows the connected public key, **Solana Devnet**, reachable RPC, and a real SOL balance. ProofMesh never displays a fake balance.
-5. Request free Devnet SOL from the [Solana faucet](https://faucet.solana.com/) or another trusted Devnet faucet, then use **Refresh balance**.
-6. If you use a private or paid Devnet RPC, set `VITE_SOLANA_RPC_URL` in the local environment to an HTTPS Devnet endpoint. If unset, ProofMesh uses `https://api.devnet.solana.com`.
+See [`docs/INTEGRATION.md`](docs/INTEGRATION.md) for the portable reputation integration contract.
 
-The wallet connection and balance read use the real Phantom adapter and Solana Devnet RPC. Real Devnet mode requires Phantom and never fakes a connected wallet or balance. Phantom does not expose its active network through the current adapter API in every browser; when that signal is unavailable, the UI explicitly shows **Devnet target · wallet network unverified** and instructs you to switch Phantom manually rather than silently treating it as Devnet. Demo Mode remains available as the no-wallet path.
+## Real Devnet and Anchor boundary
 
-## Anchor protocol infrastructure
+Real Devnet Mode uses Phantom and Solana Devnet RPC. It reads the actual wallet public key and balance, asks Phantom to sign, confirms the transaction, and exposes an Explorer link for a confirmed signature. It never fabricates a successful transaction or silently falls back to Demo Mode.
 
-The repository now includes an Anchor workspace under `programs/proofmesh_protocol`. The program is structured around two PDA families:
+The repository also includes a production-structured Anchor workspace at [`programs/proofmesh_protocol`](programs/proofmesh_protocol):
 
-- `credential` PDA: `issuer + recipient + proof_hash`, with issuer-only revocation, explicit active/revoked status, fixed-size proof/category commitments, and expiry validation.
-- `escrow` PDA: `task_hash`, with a program-owned token vault. Funding records the sponsor, reviewer, recipient, mint, amount, and task commitment. Claim requires the recipient and an active credential; approval requires the configured reviewer; release requires claimed + approved state and uses PDA signer seeds for the vault transfer.
+- Credential PDA derived from issuer, recipient, and proof hash.
+- Issuer authorization and explicit active/revoked state.
+- Expiry checks, fixed-size commitments, and replay-safe transitions.
+- Escrow PDA with sponsor, reviewer, recipient, mint, amount, claim, approval, and release constraints.
 
-The Rust code includes strict Anchor constraints (`seeds`, `bump`, `has_one`, `address`, token mint/authority constraints), duplicate-state guards, replay-safe one-way transitions, events, custom errors, and unit tests for fixed commitment sizes and invalid-state primitives.
+The Anchor program is **not claimed as deployed or audited**. The hosted prototype therefore identifies the current Real Devnet transfer as legacy SPL settlement infrastructure, not credential-gated Anchor escrow. The API verifies configured program status through `/api/solana/protocol-status` before describing a deployment as available.
 
-The current hosted prototype does **not** claim that this program is deployed. Set `SOLANA_PROTOCOL_PROGRAM_ID` only after deploying the program to Devnet and verifying that the address is executable. The API endpoint `/api/solana/protocol-status` checks that state against Devnet RPC. Until then, Real Devnet Mode uses the existing real SPL-token transfer adapter and labels it **legacy settlement infrastructure**, not credential-gated on-chain escrow. Demo Mode remains fully isolated and never calls Solana.
-
-To build and test the program in an Anchor-enabled environment:
+If Anchor tooling is installed:
 
 ```bash
 anchor build
 anchor test --provider.cluster localnet
-# after deployment and wallet funding:
+# only after deployment and wallet funding:
 anchor test --provider.cluster devnet
 ```
 
-The generated Anchor IDL and deployed program address are intentionally not committed as if they were real. This prevents fabricated transaction claims and keeps the browser state tied to verified RPC/program state.
+## Security and privacy
 
-## Tests and build
+- Server-side authorization checks every workflow action.
+- Zod validates task, recipe, evidence, wallet, payout, and agent inputs.
+- Browser-supplied organization IDs are not trusted.
+- Financial state changes use idempotency-aware paths and `FinancialAudit` records.
+- Public verification exposes receipt commitments and status, not private evidence.
+- Proof-to-Access evaluates active, non-expired public metadata and excludes revoked receipts.
+- Agent requests are bounded by allowlists, recipients, budgets, and human approval thresholds.
+- Wallet rejection and RPC failure are recoverable states; a failed or rejected transaction is not recorded as successful.
+
+Read [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for threats, mitigations, and open risks.
+
+## Testing
+
+The current verified application suite contains **24 passing tests** across Demo Mode, API services, wallet diagnostics, recipe validation, access policy, reputation graph derivation, settlement safety, and mode isolation:
 
 ```bash
 pnpm check
@@ -89,26 +284,58 @@ pnpm test
 pnpm build
 ```
 
-The test suite covers policy and recipe validation, public proof visibility, task lifecycle constraints, Proof-to-Access eligibility, agent allowlists and approval thresholds, payout safety, metrics, API validation, wallet state classification, and a lightweight live Devnet RPC request. Browser smoke testing should cover `/`, `/dashboard`, `/tasks`, `/tasks/new`, `/tasks/task-001`, `/submissions/sub-001`, `/proofs`, `/proofs/proof-001`, `/verify/proof-001`, `/verify/proof/proof-001`, `/access`, `/agents`, `/graph`, `/demo`, and `/settings`.
+The production-like smoke checks also verify fresh Prisma migrations, guarded first-run seeding, repeat-startup seed skipping, `/api/health`, seeded task retrieval, unknown API 404 behavior, direct SPA routes, and documentation links.
 
 ## Render deployment
 
-The recommended deployment is a single Node.js Web Service that serves the React SPA and Express API together. See [docs/RENDER_DEPLOYMENT.md](docs/RENDER_DEPLOYMENT.md) and the checked-in [render.yaml](render.yaml) for the exact commands, health check, environment variables, and SQLite persistent-disk boundary. The Render connector is not enabled in this session, so no live Render deployment is claimed.
+Use the checked-in [`render.yaml`](render.yaml) to deploy one Node Web Service serving both the React SPA and Express API:
 
-The Render Blueprint sets `SEED_DEMO_DATA=true` for the hackathon demo. `pnpm render:init` checks whether the mounted database is empty and seeds the deterministic fixtures only once; it never overwrites a non-empty database. Set it to `false` for a production instance that should start with no demo records.
+- Build: `pnpm install --frozen-lockfile --prod=false && pnpm prisma generate && pnpm build`
+- Start: `pnpm prisma migrate deploy && pnpm render:init && pnpm start`
+- Health check: `/api/health`
+- Database: `file:/opt/render/project/src/data/proofmesh.db`
+- Demo initialization: `SEED_DEMO_DATA=true`, guarded to empty databases only
+- Persistent disk: `/opt/render/project/src/data`
 
-## Security posture
+The persistent-disk SQLite configuration requires a paid Render instance. Follow [`docs/RENDER_DEPLOYMENT.md`](docs/RENDER_DEPLOYMENT.md) for environment variables, migration behavior, health verification, and the Postgres migration path.
 
-All workflow services perform server-side authorization and Zod input validation. Financial state transitions are idempotency-aware and recorded in `FinancialAudit`. Public proof verification exposes receipt commitments and status only; it does not expose private evidence. Proof-to-Access checks use active public receipt metadata, chain, category, and verification commitments. Agent requests are constrained by server-side category, recipient, budget, and approval policies. See [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) for the threat model and open risks.
+## Evaluation guide
 
-## Known limitations
+| Criterion                         | ProofMesh evidence                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Functionality and code quality    | Full task lifecycle, recipe validation, verification, review, receipts, access checks, API services, TypeScript validation, and 24 tests.   |
+| Potential ecosystem impact        | Portable receipts and a documented reputation API can connect bounty platforms, DAOs, developer tooling, and credential issuers.            |
+| Novelty and differentiation       | Reusable proof is a capability primitive: one accepted outcome can unlock later work without exposing private evidence.                     |
+| UX and blockchain integration     | Judge-friendly Demo Mode plus an explicit Real Devnet path with Phantom state, RPC diagnostics, confirmation, and no fabricated signatures. |
+| Open-source composability         | Prisma schema, REST endpoints, integration contract, architecture docs, and Anchor PDA source are inspectable.                              |
+| Business model and sustainability | Proposed future model: organization subscriptions, verification volume pricing, and ecosystem/API plans; no revenue is claimed today.       |
 
-This hackathon prototype uses Demo Mode identities and a local SQLite database. GitHub and deployment checks are deterministic simulations around submitted metadata rather than live provider attestations. OpenRouter recipe generation is optional and disabled unless a server-side connector is configured. Agent execution is simulated; it does not autonomously execute code, approve work, alter contracts, or move funds. The Anchor protocol source is production-structured but not deployed or audited in this environment; the browser therefore does not claim on-chain credential issuance or credential-gated escrow. The existing Real Devnet SPL transfer is real when Phantom signs and RPC confirms it, but remains a legacy settlement adapter until the Anchor IDL/program is configured. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md), [docs/LIMITATIONS.md](docs/LIMITATIONS.md), and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
+## Roadmap and business potential
 
-## Regulatory disclaimer
+### Completed in this prototype
 
-ProofMesh is a software prototype for coordinating technical work and demonstrating verifiable settlement flows. It is not financial, legal, employment, tax, investment, or regulatory advice. Devnet balances and simulated receipts have no monetary value. Any production launch requires jurisdiction-specific review, custody and money-transmission analysis, sanctions screening, privacy review, and independent smart-contract security assessment.
+- Outcome Contracts, Proof Recipes, deterministic verification, reviewer flow, and settlement records.
+- Proof Passport with active/revoked state and public verification.
+- ProofGraph and explainable opportunity matching from persisted records.
+- Phantom/Solana Devnet wallet integration with explicit simulation boundaries.
+- Anchor credential/escrow source, threat model, integration docs, Render Blueprint, and guarded demo initialization.
 
-## License and open-source direction
+### Next practical milestones
 
-The repository is structured for open review. Before a production release, add an explicit license, contributor policy, dependency policy, security disclosure process, and audited escrow implementation.
+1. Deploy and independently audit the Anchor program; connect generated IDL instructions to the UI.
+2. Replace deterministic provider checks with signed GitHub, CI, deployment, and attestation integrations.
+3. Migrate production persistence from SQLite disk to managed Postgres and add operational backups.
+4. Add organization-level accounts, passkey/authentication, issuer policies, and credential export/import.
+5. Pilot with one DAO, bounty platform, or Solana developer-tools team.
+
+Potential integrations include DAO contributor programs, bounty marketplaces, code-hosting/CI providers, security attestations, credential issuers, and applications that want proof-gated access to work or grants.
+
+## Limitations
+
+ProofMesh is a hackathon prototype. Demo Mode identities and receipts are simulated. GitHub and deployment checks are deterministic simulations around submitted metadata unless a live provider connector is configured. The AI-agent surface cannot execute code, approve its own work, alter Outcome Contracts, or move funds autonomously. The Anchor protocol is not deployed or audited in this environment. SQLite on a persistent disk is single-instance infrastructure; use managed Postgres for a scalable production deployment.
+
+ProofMesh is not financial, legal, employment, tax, investment, or regulatory advice. Devnet balances and simulated receipts have no monetary value. A production launch requires jurisdiction-specific review, custody and money-transmission analysis, sanctions screening, privacy review, and an independent smart-contract security assessment. See [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
+
+## License and contribution direction
+
+The repository currently carries an MIT package declaration but should add a root `LICENSE` file, contributor guide, security disclosure process, and dependency policy before a broad open-source release. Contributions should preserve the Demo Mode/Real Devnet separation and never introduce fabricated transaction claims.
