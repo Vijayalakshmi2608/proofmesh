@@ -41,10 +41,10 @@ ProofMesh starts in **Demo Mode** so a judge can explore the complete workflow w
 
 The mode switch is available in the workspace topbar and under **Settings → Demo Mode**:
 
-| Mode | Wallet requirement | Financial behavior |
-| --- | --- | --- |
-| **Demo Mode** | None | Uses isolated records and deterministic IDs such as `demo-tx-task-002-fund`. Every action is labeled **DEMO — Simulated Transaction** and never calls Solana. |
-| **Real Devnet** | Phantom connected to Solana Devnet | Requires the real wallet, Devnet RPC, and explicit wallet confirmation. It never silently falls back to simulation. |
+| Mode            | Wallet requirement                 | Financial behavior                                                                                                                                            |
+| --------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Demo Mode**   | None                               | Uses isolated records and deterministic IDs such as `demo-tx-task-002-fund`. Every action is labeled **DEMO — Simulated Transaction** and never calls Solana. |
+| **Real Devnet** | Phantom connected to Solana Devnet | Requires the real wallet, Devnet RPC, and explicit wallet confirmation. It never silently falls back to simulation.                                           |
 
 For the two-to-three-minute walkthrough, choose **Demo Mode**, open the active task, accept it, submit evidence, switch the demo role to Reviewer, run checks, approve, and use the simulated payout panel to view the receipt. Use **Settings → Demo Mode → Reset Demo** to restore the deterministic dataset; reset does not move funds or touch external Devnet data.
 
@@ -94,6 +94,8 @@ The test suite covers policy and recipe validation, public proof visibility, tas
 ## Render deployment
 
 The recommended deployment is a single Node.js Web Service that serves the React SPA and Express API together. See [docs/RENDER_DEPLOYMENT.md](docs/RENDER_DEPLOYMENT.md) and the checked-in [render.yaml](render.yaml) for the exact commands, health check, environment variables, and SQLite persistent-disk boundary. The Render connector is not enabled in this session, so no live Render deployment is claimed.
+
+The Render Blueprint sets `SEED_DEMO_DATA=true` for the hackathon demo. `pnpm render:init` checks whether the mounted database is empty and seeds the deterministic fixtures only once; it never overwrites a non-empty database. Set it to `false` for a production instance that should start with no demo records.
 
 ## Security posture
 

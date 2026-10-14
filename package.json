@@ -14,7 +14,8 @@
     "db:seed": "prisma db seed",
     "db:generate": "prisma generate",
     "test": "pnpm db:seed && vitest run --root . server/api.test.ts client/src/hooks/useSolanaWalletDiagnostics.test.ts client/src/contexts/AppModeContext.test.ts",
-    "dev:server": "tsx server/index.ts"
+    "dev:server": "tsx server/index.ts",
+    "render:init": "tsx scripts/ensure-demo-data.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

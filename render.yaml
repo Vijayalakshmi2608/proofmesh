@@ -5,9 +5,9 @@ services:
     region: singapore
     # SQLite persistence requires a paid instance with a persistent disk.
     plan: 0.5c-512mb
-    buildCommand: pnpm install --frozen-lockfile && pnpm prisma generate && pnpm build
+    buildCommand: pnpm install --frozen-lockfile --prod=false && pnpm prisma generate && pnpm build
     # Render disks are mounted only at runtime, so migrations must run here.
-    startCommand: pnpm prisma migrate deploy && pnpm start
+    startCommand: pnpm prisma migrate deploy && pnpm render:init && pnpm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
@@ -17,6 +17,8 @@ services:
         value: file:/opt/render/project/src/data/proofmesh.db
       - key: VITE_SOLANA_RPC_URL
         value: https://api.devnet.solana.com
+      - key: SEED_DEMO_DATA
+        value: "true"
       - key: CORS_ORIGIN
         sync: false
       - key: SOLANA_PROTOCOL_PROGRAM_ID

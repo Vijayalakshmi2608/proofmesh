@@ -7,8 +7,8 @@ ProofMesh is a **single Render Web Service**, not a Static Site. The service mus
 The checked-in [`render.yaml`](../render.yaml) is the reproducible Blueprint. It uses:
 
 - **Runtime:** Node.js
-- **Build:** `pnpm install --frozen-lockfile && pnpm prisma generate && pnpm build`
-- **Start:** `pnpm prisma migrate deploy && pnpm start`
+- **Build:** `pnpm install --frozen-lockfile --prod=false && pnpm prisma generate && pnpm build`
+- **Start:** `pnpm prisma migrate deploy && pnpm render:init && pnpm start`
 - **Health check:** `/api/health`
 - **Port:** `process.env.PORT`
 - **Host:** `0.0.0.0`
@@ -28,21 +28,22 @@ This is intentionally a **paid 0.5 CPU / 512 MB service**. Render Free web servi
 
 For a free or horizontally scaled deployment, migrate Prisma to Render Postgres instead of using SQLite. Do not deploy the current SQLite schema to a free service and describe it as durable.
 
-The Blueprint does not seed automatically. Seeding on every restart would erase user data. To initialize a fresh demo instance, run `pnpm db:seed` once from a controlled Render shell or use the Render API/console workflow. Do not run the seed command against an existing production database.
+The Blueprint sets `SEED_DEMO_DATA=true` and runs `pnpm render:init` at startup. This initializer checks the profile count first: it seeds the deterministic demo dataset only when the database is completely empty, then skips seeding on every later restart. It never resets a non-empty database. Set `SEED_DEMO_DATA=false` for a production instance that should start empty, or remove the variable entirely.
 
 ## Environment variables
 
 The Blueprint supplies safe non-secret defaults for `NODE_ENV`, `DATABASE_URL`, and `VITE_SOLANA_RPC_URL`. Add these values in Render’s Environment settings when applicable:
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `NODE_ENV` | Yes | Set to `production`. |
-| `DATABASE_URL` | Yes | SQLite URL on the persistent disk, or a PostgreSQL URL after a provider migration. |
-| `VITE_SOLANA_RPC_URL` | No | Public Devnet RPC used by the browser. Defaults to Solana Devnet if omitted. |
-| `CORS_ORIGIN` | Only for split-origin clients | Comma-separated exact origins allowed to call the API. Leave unset for the same-origin service. |
-| `SOLANA_PROTOCOL_PROGRAM_ID` | No | Only set after the Anchor program is deployed and verified executable on Devnet. |
-| `SOLANA_CREDENTIAL_PROGRAM` | No | Optional credential-program configuration; never put a private key here. |
-| `VITE_DEVNET_USDC_MINT` | No | Optional public Devnet token mint used by the wallet UI. |
+| Variable                     | Required                      | Purpose                                                                                                 |
+| ---------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                   | Yes                           | Set to `production`.                                                                                    |
+| `DATABASE_URL`               | Yes                           | SQLite URL on the persistent disk, or a PostgreSQL URL after a provider migration.                      |
+| `VITE_SOLANA_RPC_URL`        | No                            | Public Devnet RPC used by the browser. Defaults to Solana Devnet if omitted.                            |
+| `SEED_DEMO_DATA`             | Demo only                     | When `true`, seed only an empty database once during startup. Never use this as a data-reset mechanism. |
+| `CORS_ORIGIN`                | Only for split-origin clients | Comma-separated exact origins allowed to call the API. Leave unset for the same-origin service.         |
+| `SOLANA_PROTOCOL_PROGRAM_ID` | No                            | Only set after the Anchor program is deployed and verified executable on Devnet.                        |
+| `SOLANA_CREDENTIAL_PROGRAM`  | No                            | Optional credential-program configuration; never put a private key here.                                |
+| `VITE_DEVNET_USDC_MINT`      | No                            | Optional public Devnet token mint used by the wallet UI.                                                |
 
 Never put Phantom secret keys, Solana keypairs, database passwords, or API tokens in `VITE_*` variables. Vite embeds `VITE_*` values in browser assets. Use Render secret environment variables for server-only credentials.
 
